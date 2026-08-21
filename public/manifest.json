@@ -1,0 +1,10 @@
+{
+  "name": "Presensi Online Salam Awal Al-Uswah",
+  "short_name": "Presensi SA Al-Uswah",
+  "description": "Presensi Online Salam Awal Al-Uswah",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1330",
+  "theme_color": "#1a1330",
+  "icons": []
+}
