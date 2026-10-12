@@ -38,43 +38,28 @@
 
 :root {
   color-scheme: dark;
-  /* Dark base with a purple-blue night tone */
-  --background: oklch(0.17 0.045 285);
+  --background: oklch(0.145 0.035 275);
   --foreground: oklch(0.97 0.012 90);
-
-  /* Translucent glass cards */
-  --card: oklch(0.24 0.05 285 / 55%);
+  --card: oklch(0.205 0.04 275);
   --card-foreground: oklch(0.97 0.012 90);
-  --popover: oklch(0.2 0.05 285);
+  --popover: oklch(0.19 0.04 275);
   --popover-foreground: oklch(0.97 0.012 90);
-
-  /* Gold as the primary action color */
-  --primary: oklch(0.83 0.16 85);
-  --primary-foreground: oklch(0.2 0.05 285);
-
-  /* Purple secondary */
-  --secondary: oklch(0.45 0.19 300);
+  --primary: oklch(0.86 0.16 88);
+  --primary-foreground: oklch(0.18 0.04 275);
+  --secondary: oklch(0.48 0.18 300);
   --secondary-foreground: oklch(0.98 0.01 90);
-
-  --muted: oklch(0.3 0.05 285 / 60%);
-  --muted-foreground: oklch(0.78 0.03 285);
-
-  /* Blue accent */
-  --accent: oklch(0.6 0.19 250);
+  --muted: oklch(0.25 0.035 275);
+  --muted-foreground: oklch(0.72 0.025 275);
+  --accent: oklch(0.62 0.18 250);
   --accent-foreground: oklch(0.98 0.01 90);
-
   --destructive: oklch(0.62 0.24 20);
-
-  --border: oklch(0.85 0.05 90 / 18%);
-  --input: oklch(0.85 0.05 90 / 14%);
-  --ring: oklch(0.83 0.16 85);
-
-  --radius: 0.9rem;
-
-  /* Brand palette tokens */
-  --gold: oklch(0.83 0.16 85);
-  --purple: oklch(0.5 0.21 300);
-  --blue: oklch(0.6 0.19 250);
+  --border: oklch(0.85 0.05 90 / 14%);
+  --input: oklch(0.85 0.05 90 / 12%);
+  --ring: oklch(0.86 0.16 88);
+  --radius: 0.75rem;
+  --gold: oklch(0.86 0.16 88);
+  --purple: oklch(0.52 0.21 300);
+  --blue: oklch(0.62 0.18 250);
 }
 
 @layer base {

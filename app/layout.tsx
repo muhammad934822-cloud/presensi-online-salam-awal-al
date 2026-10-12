@@ -16,8 +16,8 @@ const fraunces = Fraunces({
 })
 
 export const metadata: Metadata = {
-  title: 'Presensi Online Salam Awal Al-Uswah',
-  description: 'Presensi Online Salam Awal Al-Uswah',
+  title: 'presensionlinesaa',
+  description: 'presensionlinesaa',
   generator: 'v0.app',
   manifest: '/manifest.json',
 }
