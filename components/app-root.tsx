@@ -42,34 +42,36 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
   if (choice === "panitia") return <PanitiaAuth onBack={() => setChoice("none")} />
 
   return (
-    <div className="mx-auto w-full max-w-md">
+    <div className="mx-auto flex w-full max-w-2xl flex-col justify-center gap-10">
       <BrandHeader />
 
-      <div className="mt-10 grid gap-4">
+      <div className="grid gap-3 sm:grid-cols-2">
         <button
           onClick={() => setChoice("peserta")}
-          className="group flex items-center gap-4 rounded-3xl border border-white/15 bg-white/[0.06] p-5 text-left shadow-2xl shadow-black/40 backdrop-blur-xl transition hover:border-[var(--gold)]/50 hover:bg-white/[0.1]"
+          className="group flex min-h-32 items-center gap-4 rounded-2xl border border-border bg-card/80 p-5 text-left shadow-xl shadow-black/10 transition hover:-translate-y-0.5 hover:border-primary/60 hover:bg-card"
         >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--gold)] to-[var(--purple)] text-white">
-            <GraduationCap className="h-7 w-7" />
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <GraduationCap className="h-5 w-5" aria-hidden="true" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-base font-semibold text-foreground">Peserta</span>
+            <span className="block text-sm font-semibold text-foreground">Peserta</span>
+            <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Masuk untuk menampilkan kode presensi</span>
           </span>
-          <ChevronRight className="h-5 w-5 text-foreground/50 transition group-hover:translate-x-0.5" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" aria-hidden="true" />
         </button>
 
         <button
           onClick={() => setChoice("panitia")}
-          className="group flex items-center gap-4 rounded-3xl border border-white/15 bg-white/[0.06] p-5 text-left shadow-2xl shadow-black/40 backdrop-blur-xl transition hover:border-[var(--blue)]/50 hover:bg-white/[0.1]"
+          className="group flex min-h-32 items-center gap-4 rounded-2xl border border-border bg-card/80 p-5 text-left shadow-xl shadow-black/10 transition hover:-translate-y-0.5 hover:border-accent/60 hover:bg-card"
         >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--blue)] to-[var(--purple)] text-white">
-            <ShieldCheck className="h-7 w-7" />
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+            <ShieldCheck className="h-5 w-5" aria-hidden="true" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-base font-semibold text-foreground">Panitia</span>
+            <span className="block text-sm font-semibold text-foreground">Panitia</span>
+            <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Kelola verifikasi dan rekap presensi</span>
           </span>
-          <ChevronRight className="h-5 w-5 text-foreground/50 transition group-hover:translate-x-0.5" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-accent" aria-hidden="true" />
         </button>
       </div>
     </div>

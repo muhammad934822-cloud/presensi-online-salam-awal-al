@@ -1,18 +1,17 @@
+import { GraduationCap } from "lucide-react"
+
 export function BrandHeader({ compact = false }: { compact?: boolean }) {
   return (
-    <header className="flex flex-col items-center text-center">
-      <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-xs font-medium tracking-wide text-foreground/80 backdrop-blur">
-        <span className="h-2 w-2 rounded-full bg-gradient-to-r from-[var(--gold)] to-[var(--blue)]" />
-        PRESENSIONLINESAA
+    <header className="flex items-center gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/10">
+        <GraduationCap className="h-5 w-5" aria-hidden="true" />
       </div>
-      <h1
-        className={
-          "text-balance bg-gradient-to-r from-[var(--gold)] via-[var(--purple)] to-[var(--blue)] bg-clip-text font-serif font-semibold text-transparent " +
-          (compact ? "text-2xl" : "text-3xl sm:text-4xl")
-        }
-      >
-        presensionlinesaa
-      </h1>
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">Presensi</p>
+        <h1 className={compact ? "text-lg font-semibold tracking-tight" : "text-xl font-semibold tracking-tight sm:text-2xl"}>
+          Salam Awal Al Uswah
+        </h1>
+      </div>
     </header>
   )
 }
