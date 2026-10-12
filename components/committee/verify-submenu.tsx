@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState, useTransition } from "react"
+import { useCallback, useEffect, useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Camera, CameraOff, ScanLine, CheckCircle2, XCircle, Info, Loader2 } from "lucide-react"
 import { QrScanner } from "@/components/qr-scanner"
@@ -19,13 +19,9 @@ export function VerifySubmenu({ event }: { event: string }) {
   const [pending, startTransition] = useTransition()
   const router = useRouter()
 
-  const onScan = useCallback(
-    (text: string) => {
-      submit(text)
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [submit],
-  )
+  // Stabilkan referensi onResult agar kamera tidak restart tiap render
+  // (fungsi baru per-render memicu efek scanner -> loop hidup/matikan kamera).
+  const submitRef = useRef<(raw: string) => void>(() => {})
 
   const submit = useCallback(
     (raw: string) => {
@@ -56,6 +52,12 @@ export function VerifySubmenu({ event }: { event: string }) {
     [event, router],
   )
 
+  useEffect(() => {
+    submitRef.current = submit
+  }, [submit])
+
+  const onResult = useCallback((text: string) => submitRef.current(text), [])
+
   return (
     <div className="grid gap-4">
       <button
@@ -71,7 +73,7 @@ export function VerifySubmenu({ event }: { event: string }) {
         {scanning ? "Matikan Kamera" : "Scan dengan Kamera"}
       </button>
 
-      {scanning && <QrScanner event={event} />}
+      {scanning && <QrScanner active={scanning} onResult={onResult} />}
 
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/20" />

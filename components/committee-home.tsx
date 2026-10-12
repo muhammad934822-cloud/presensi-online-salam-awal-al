@@ -208,7 +208,8 @@ export function CommitteeHome({
               </div>
 
               {tab === "verifikasi" ? (
-                <VerifySubmenu event={selected} />
+                // key: remount bersih saat ganti acara, hindari state tertinggal
+                <VerifySubmenu key={selected} event={selected} />
               ) : (
                 <RecapSubmenu rows={recaps[selected] ?? []} eventLabel={EVENT_LABELS[selected]} />
               )}
