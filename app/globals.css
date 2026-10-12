@@ -38,28 +38,28 @@
 
 :root {
   color-scheme: dark;
-  --background: oklch(0.145 0.035 275);
-  --foreground: oklch(0.97 0.012 90);
-  --card: oklch(0.205 0.04 275);
-  --card-foreground: oklch(0.97 0.012 90);
-  --popover: oklch(0.19 0.04 275);
-  --popover-foreground: oklch(0.97 0.012 90);
-  --primary: oklch(0.86 0.16 88);
-  --primary-foreground: oklch(0.18 0.04 275);
-  --secondary: oklch(0.48 0.18 300);
-  --secondary-foreground: oklch(0.98 0.01 90);
-  --muted: oklch(0.25 0.035 275);
-  --muted-foreground: oklch(0.72 0.025 275);
-  --accent: oklch(0.62 0.18 250);
-  --accent-foreground: oklch(0.98 0.01 90);
-  --destructive: oklch(0.62 0.24 20);
-  --border: oklch(0.85 0.05 90 / 14%);
-  --input: oklch(0.85 0.05 90 / 12%);
-  --ring: oklch(0.86 0.16 88);
-  --radius: 0.75rem;
-  --gold: oklch(0.86 0.16 88);
-  --purple: oklch(0.52 0.21 300);
-  --blue: oklch(0.62 0.18 250);
+  --background: oklch(0.12 0.018 255);
+  --foreground: oklch(0.96 0.008 255);
+  --card: oklch(0.17 0.022 255);
+  --card-foreground: oklch(0.96 0.008 255);
+  --popover: oklch(0.16 0.022 255);
+  --popover-foreground: oklch(0.96 0.008 255);
+  --primary: oklch(0.78 0.14 82);
+  --primary-foreground: oklch(0.16 0.02 255);
+  --secondary: oklch(0.24 0.028 255);
+  --secondary-foreground: oklch(0.96 0.008 255);
+  --muted: oklch(0.2 0.02 255);
+  --muted-foreground: oklch(0.67 0.018 255);
+  --accent: oklch(0.68 0.12 235);
+  --accent-foreground: oklch(0.12 0.018 255);
+  --destructive: oklch(0.62 0.2 25);
+  --border: oklch(0.92 0.01 255 / 12%);
+  --input: oklch(0.92 0.01 255 / 14%);
+  --ring: oklch(0.78 0.14 82);
+  --radius: 0.65rem;
+  --gold: oklch(0.78 0.14 82);
+  --purple: oklch(0.54 0.1 290);
+  --blue: oklch(0.68 0.12 235);
 }
 
 @layer base {
@@ -71,39 +71,3 @@
   }
 }
 
-/* Slow drifting animation for the dynamic background */
-@keyframes bg-pan {
-  0% {
-    transform: scale(1.1) translate3d(0, 0, 0);
-  }
-  50% {
-    transform: scale(1.2) translate3d(-2%, -2%, 0);
-  }
-  100% {
-    transform: scale(1.1) translate3d(0, 0, 0);
-  }
-}
-
-@keyframes aurora {
-  0%,
-  100% {
-    opacity: 0.55;
-    transform: translate3d(0, 0, 0) rotate(0deg);
-  }
-  50% {
-    opacity: 0.8;
-    transform: translate3d(3%, -3%, 0) rotate(8deg);
-  }
-}
-
-.animate-bg-pan {
-  animation: bg-pan 28s ease-in-out infinite;
-}
-
-.animate-aurora {
-  animation: aurora 16s ease-in-out infinite;
-}
-
-.animate-aurora-slow {
-  animation: aurora 22s ease-in-out infinite reverse;
-}
