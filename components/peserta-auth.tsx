@@ -2,8 +2,17 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, UserPlus, LogIn, KeyRound } from "lucide-react"
-import { GlassCard, TextField, SelectField, GradientButton } from "./ui-kit"
+import {
+  ArrowLeft,
+  UserPlus,
+  LogIn,
+  KeyRound,
+  Loader2,
+  Sparkles,
+  ChevronRight,
+  ShieldQuestion,
+} from "lucide-react"
+import { GlassCard, TextField, SelectField, GradientButton, GhostButton } from "./ui-kit"
 import { KELAS_OPTIONS, NOMOR_PRESENSI_OPTIONS } from "@/lib/constants"
 import {
   signUpParticipant,
@@ -12,6 +21,13 @@ import {
 } from "@/app/actions/participant"
 
 type Mode = "choice" | "signup" | "login" | "reset"
+
+const MODE_TITLES: Record<Mode, { title: string; subtitle: string }> = {
+  choice: { title: "Peserta", subtitle: "Pilih aksi untuk melanjutkan" },
+  signup: { title: "Daftar Akun", subtitle: "Lengkapi identitas kamu untuk membuat akun presensi" },
+  login: { title: "Masuk Akun", subtitle: "Gunakan kelas, nomor presensi, dan password kamu" },
+  reset: { title: "Reset Password", subtitle: "Gunakan kode unik yang kamu buat saat mendaftar" },
+}
 
 export function PesertaAuth({ onBack }: { onBack: () => void }) {
   const [mode, setMode] = useState<Mode>("choice")
@@ -35,41 +51,55 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
     })
   }
 
+  const heading = MODE_TITLES[mode]
+
   return (
     <div className="mx-auto w-full max-w-md">
       <button
         onClick={() => (mode === "choice" ? onBack() : setMode("choice"))}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-foreground/70 transition hover:text-foreground"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-foreground/70 transition hover:-translate-x-0.5 hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" /> Kembali
       </button>
 
-      <GlassCard>
+      <GlassCard glow className="animate-pop">
         <div className="mb-5 text-center">
-          <h2 className="font-serif text-2xl font-semibold text-foreground">Peserta</h2>
+          <span className="relative mx-auto mb-4 inline-block">
+            <span className="conic-ring absolute -inset-1.5 rounded-3xl opacity-60 blur-[3px]" aria-hidden="true" />
+            <span className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--gold),#e8c87a)] text-[oklch(0.2_0.03_255)] shadow-xl shadow-[var(--gold)]/25">
+              {mode === "reset" ? <KeyRound className="h-8 w-8" /> : mode === "login" ? <LogIn className="h-8 w-8" /> : <UserPlus className="h-8 w-8" />}
+            </span>
+          </span>
+          <h2 className="font-serif text-2xl font-semibold text-foreground">{heading.title}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{heading.subtitle}</p>
         </div>
 
         {error ? (
-          <p className="mb-4 rounded-xl border border-destructive/40 bg-destructive/15 px-3 py-2 text-sm text-foreground">
-            {error}
+          <p role="alert" className="animate-pop mb-4 flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/15 px-3 py-2 text-sm text-foreground">
+            <ShieldQuestion className="h-4 w-4 shrink-0 text-destructive" /> {error}
           </p>
         ) : null}
         {notice ? (
-          <p className="mb-4 rounded-xl border border-[var(--gold)]/40 bg-[var(--gold)]/15 px-3 py-2 text-sm text-foreground">
-            {notice}
+          <p role="status" className="animate-pop mb-4 flex items-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-400/15 px-3 py-2 text-sm text-foreground">
+            <Sparkles className="h-4 w-4 shrink-0 text-emerald-300" /> {notice}
           </p>
         ) : null}
 
         {mode === "choice" && (
           <div className="grid gap-3">
             <GradientButton onClick={() => setMode("signup")}>
-              <UserPlus className="h-5 w-5" /> Sign In (Daftar Akun)
+              <UserPlus className="h-5 w-5" /> Daftar Akun Baru
             </GradientButton>
+            <GhostButton onClick={() => setMode("login")}>
+              <LogIn className="h-5 w-5" /> Masuk (Log In)
+              <ChevronRight className="ml-auto h-4 w-4 opacity-50" />
+            </GhostButton>
             <button
-              onClick={() => setMode("login")}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/[0.05] px-5 py-3 text-base font-semibold text-foreground transition hover:bg-white/10"
+              type="button"
+              onClick={() => setMode("reset")}
+              className="mt-1 text-center text-xs text-muted-foreground/80 underline decoration-dotted underline-offset-4 transition hover:text-foreground"
             >
-              <LogIn className="h-5 w-5" /> Log In (Masuk)
+              Lupa password? Reset dengan kode unik →
             </button>
           </div>
         )}
@@ -82,13 +112,14 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
             }}
             className="grid gap-4"
           >
-            <p className="text-center text-sm font-medium text-foreground/80">Identitas</p>
             <TextField
               label="Nama Lengkap"
               name="nama"
               required
+              autoFocus
               autoComplete="off"
-              placeholder="NAMA LENGKAP"
+              placeholder="CONTOH: AHMAD FUADI"
+              icon={<UserPlus />}
               style={{ textTransform: "uppercase" }}
               onChange={(e) => {
                 e.currentTarget.value = e.currentTarget.value.toUpperCase()
@@ -97,7 +128,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
             <div className="grid grid-cols-2 gap-3">
               <SelectField label="Kelas" name="kelas" required defaultValue="">
                 <option value="" disabled>
-                  Pilih
+                  Pilih kelas
                 </option>
                 {KELAS_OPTIONS.map((k) => (
                   <option key={k} value={k}>
@@ -107,7 +138,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
               </SelectField>
               <SelectField label="No. Presensi" name="nomorPresensi" required defaultValue="">
                 <option value="" disabled>
-                  Pilih
+                  Pilih nomor
                 </option>
                 {NOMOR_PRESENSI_OPTIONS.map((n) => (
                   <option key={n} value={n}>
@@ -116,16 +147,25 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
                 ))}
               </SelectField>
             </div>
-            <TextField label="Password" name="password" type="password" required placeholder="Buat password" />
+            <TextField label="Password" name="password" type="password" required placeholder="Buat password" icon={<KeyRound />} />
             <TextField
               label="Kode Unik"
               name="kodeUnik"
               required
-              placeholder="Untuk reset password"
+              placeholder="Kata kunci rahasia kamu"
+              icon={<Sparkles />}
               hint="Simpan baik-baik. Kode ini dipakai untuk reset password jika lupa."
             />
             <GradientButton type="submit" disabled={pending}>
-              {pending ? "Mendaftar..." : "Daftar & Masuk"}
+              {pending ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" /> Mendaftar...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-5 w-5" /> Daftar & Masuk
+                </>
+              )}
             </GradientButton>
           </form>
         )}
@@ -141,7 +181,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
             <div className="grid grid-cols-2 gap-3">
               <SelectField label="Kelas" name="kelas" required defaultValue="">
                 <option value="" disabled>
-                  Pilih
+                  Pilih kelas
                 </option>
                 {KELAS_OPTIONS.map((k) => (
                   <option key={k} value={k}>
@@ -151,7 +191,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
               </SelectField>
               <SelectField label="No. Presensi" name="nomorPresensi" required defaultValue="">
                 <option value="" disabled>
-                  Pilih
+                  Pilih nomor
                 </option>
                 {NOMOR_PRESENSI_OPTIONS.map((n) => (
                   <option key={n} value={n}>
@@ -160,7 +200,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
                 ))}
               </SelectField>
             </div>
-            <TextField label="Password" name="password" type="password" required placeholder="Masukkan password" />
+            <TextField label="Password" name="password" type="password" required autoFocus placeholder="Masukkan password" icon={<KeyRound />} />
             <button
               type="button"
               onClick={() => setMode("reset")}
@@ -169,7 +209,15 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
               Lupa password? Reset di sini memakai kode unik yang kamu buat saat daftar.
             </button>
             <GradientButton type="submit" disabled={pending}>
-              {pending ? "Masuk..." : "Log In"}
+              {pending ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" /> Masuk...
+                </>
+              ) : (
+                <>
+                  <LogIn className="h-5 w-5" /> Log In
+                </>
+              )}
             </GradientButton>
           </form>
         )}
@@ -186,13 +234,10 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
             }}
             className="grid gap-4"
           >
-            <p className="flex items-center justify-center gap-2 text-center text-sm font-medium text-foreground/80">
-              <KeyRound className="h-4 w-4" /> Reset Password
-            </p>
             <div className="grid grid-cols-2 gap-3">
               <SelectField label="Kelas" name="kelas" required defaultValue="">
                 <option value="" disabled>
-                  Pilih
+                  Pilih kelas
                 </option>
                 {KELAS_OPTIONS.map((k) => (
                   <option key={k} value={k}>
@@ -202,7 +247,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
               </SelectField>
               <SelectField label="No. Presensi" name="nomorPresensi" required defaultValue="">
                 <option value="" disabled>
-                  Pilih
+                  Pilih nomor
                 </option>
                 {NOMOR_PRESENSI_OPTIONS.map((n) => (
                   <option key={n} value={n}>
@@ -211,10 +256,18 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
                 ))}
               </SelectField>
             </div>
-            <TextField label="Kode Unik" name="kodeUnik" required placeholder="Kode unik saat daftar" />
-            <TextField label="Password Baru" name="newPassword" type="password" required placeholder="Password baru" />
+            <TextField label="Kode Unik" name="kodeUnik" required autoFocus placeholder="Kode unik saat daftar" icon={<Sparkles />} />
+            <TextField label="Password Baru" name="newPassword" type="password" required placeholder="Password baru" icon={<KeyRound />} />
             <GradientButton type="submit" disabled={pending}>
-              {pending ? "Memproses..." : "Reset Password"}
+              {pending ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" /> Memproses...
+                </>
+              ) : (
+                <>
+                  <KeyRound className="h-5 w-5" /> Reset Password
+                </>
+              )}
             </GradientButton>
           </form>
         )}

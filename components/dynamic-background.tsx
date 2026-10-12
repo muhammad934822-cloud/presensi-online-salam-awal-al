@@ -1,9 +1,17 @@
 export function DynamicBackground() {
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-background">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,oklch(0.25_0.04_235/.28),transparent_38%),radial-gradient(circle_at_bottom_left,oklch(0.22_0.035_290/.24),transparent_42%)]" />
-      <div className="absolute inset-x-0 top-0 h-px bg-primary/30" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,oklch(0.12_0.018_255/.35)_72%,oklch(0.12_0.018_255/.8)_100%)]" />
+    <div aria-hidden className="grain pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-background">
+      {/* Drifting aurora blobs */}
+      <div className="animate-blob absolute -top-32 -right-24 h-[34rem] w-[34rem] rounded-full bg-[radial-gradient(circle,oklch(0.78_0.14_82/.16),transparent_65%)] blur-2xl" />
+      <div className="animate-blob-slow absolute top-1/3 -left-32 h-[30rem] w-[30rem] rounded-full bg-[radial-gradient(circle,oklch(0.54_0.1_290/.2),transparent_65%)] blur-2xl" />
+      <div className="animate-blob-slower absolute -bottom-40 right-1/4 h-[32rem] w-[32rem] rounded-full bg-[radial-gradient(circle,oklch(0.68_0.12_235/.16),transparent_65%)] blur-2xl" />
+
+      {/* Subtle grid texture */}
+      <div className="absolute inset-0 opacity-[0.05] [background-image:linear-gradient(oklch(0.96_0.008_255/1)_1px,transparent_1px),linear-gradient(90deg,oklch(0.96_0.008_255/1)_1px,transparent_1px)] [background-size:44px_44px]" />
+
+      {/* Glowing top edge + depth vignette */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--gold)] to-transparent opacity-60" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,oklch(0.09_0.02_255/.7)_100%)]" />
     </div>
   )
 }

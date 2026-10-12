@@ -69,5 +69,150 @@
   body {
     @apply bg-background text-foreground;
   }
+  html {
+    scroll-behavior: smooth;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--gold) 40%, transparent);
+  }
 }
 
+/* ---------- Custom animations & interactive flourishes ---------- */
+
+/* Slowly orbiting gradient blobs for the hero background */
+@keyframes blob-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(60px, -40px) scale(1.15); }
+  66%      { transform: translate(-40px, 50px) scale(0.92); }
+}
+.animate-blob { animation: blob-drift 18s ease-in-out infinite; }
+.animate-blob-slow { animation: blob-drift 26s ease-in-out infinite reverse; }
+.animate-blob-slower { animation: blob-drift 34s ease-in-out infinite; }
+
+/* Gentle floating for decorative icons/cards */
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+.animate-float { animation: float-y 5s ease-in-out infinite; }
+.animate-float-delayed { animation: float-y 6s ease-in-out 1.2s infinite; }
+
+/* Shimmering sheen that sweeps across surfaces (buttons, QR frame) */
+@keyframes sheen {
+  0%   { transform: translateX(-150%) skewX(-12deg); }
+  100% { transform: translateX(250%) skewX(-12deg); }
+}
+.sheen-host { position: relative; overflow: hidden; }
+.sheen-host::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 -100%;
+  width: 60%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.18), transparent);
+  transform: translateX(-150%) skewX(-12deg);
+  pointer-events: none;
+}
+.sheen-host:hover::after,
+.sheen-run::after { animation: sheen 1.1s ease-out; }
+
+/* Animated conic-gradient ring (used around avatars / QR) */
+@property --ring-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes spin-conic {
+  to { --ring-angle: 360deg; }
+}
+.conic-ring {
+  background: conic-gradient(
+    from var(--ring-angle),
+    var(--gold), var(--purple), var(--blue), var(--gold)
+  );
+  animation: spin-conic 4s linear infinite;
+}
+
+/* Scanning laser line inside the camera viewfinder */
+@keyframes scanline {
+  0%, 100% { top: 8%; opacity: 0.4; }
+  50%      { top: 88%; opacity: 1; }
+}
+.scanline {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  box-shadow: 0 0 18px 2px color-mix(in oklch, var(--gold) 60%, transparent);
+  animation: scanline 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Success pulse ring */
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklch, oklch(0.75 0.16 160) 55%, transparent); }
+  100% { box-shadow: 0 0 0 22px transparent; }
+}
+.pulse-success { animation: pulse-ring 1.4s cubic-bezier(0.2, 0.6, 0.4, 1) infinite; }
+
+/* Entrance animations */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-rise { animation: rise-in 0.55s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.animate-rise-1 { animation: rise-in 0.55s 0.05s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.animate-rise-2 { animation: rise-in 0.55s 0.15s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.animate-rise-3 { animation: rise-in 0.55s 0.25s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.animate-rise-4 { animation: rise-in 0.55s 0.35s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(0.85); }
+  70%  { transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.animate-pop { animation: pop-in 0.45s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+
+/* Live status dot ping */
+@keyframes soft-ping {
+  0%   { transform: scale(1); opacity: 0.8; }
+  80%, 100% { transform: scale(2.4); opacity: 0; }
+}
+.animate-soft-ping { animation: soft-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
+/* Gradient text helper */
+.text-gradient-gold {
+  background: linear-gradient(92deg, var(--gold), color-mix(in oklch, var(--gold) 55%, white));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Subtle grain overlay to enrich dark surfaces */
+.grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Card hover lift used across dashboards */
+.lift {
+  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px -18px color-mix(in oklch, var(--purple) 45%, black);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-blob, .animate-blob-slow, .animate-blob-slower,
+  .animate-float, .animate-float-delayed,
+  .conic-ring, .scanline, .pulse-success, .animate-soft-ping {
+    animation: none !important;
+  }
+}

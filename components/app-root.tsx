@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { GraduationCap, ShieldCheck, ChevronRight } from "lucide-react"
+import { GraduationCap, ShieldCheck, ChevronRight, QrCode, Zap } from "lucide-react"
 import { BrandHeader } from "./brand-header"
 import { PesertaAuth } from "./peserta-auth"
 import { PanitiaAuth } from "./panitia-auth"
@@ -43,36 +43,67 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col justify-center gap-10">
-      <BrandHeader />
+      <div className="text-center sm:text-left">
+        <BrandHeader />
+        <p className="animate-rise-1 mt-5 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
+          Sistem presensi digital untuk kegiatan <span className="font-semibold text-foreground/90">Salam Awal Al Uswah</span>.
+          Masuk sebagai peserta untuk menampilkan kode QR presensi, atau sebagai panitia untuk memverifikasi dan merekap kehadiran.
+        </p>
+      </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <button
           onClick={() => setChoice("peserta")}
-          className="group flex min-h-32 items-center gap-4 rounded-2xl border border-border bg-card/80 p-5 text-left shadow-xl shadow-black/10 transition hover:-translate-y-0.5 hover:border-primary/60 hover:bg-card"
+          className="lift sheen-host animate-rise-2 group relative flex min-h-40 flex-col items-start gap-4 overflow-hidden rounded-3xl border border-white/12 bg-gradient-to-br from-white/[0.08] to-white/[0.03] p-6 text-left backdrop-blur-xl hover:border-[var(--gold)]/60"
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <GraduationCap className="h-5 w-5" aria-hidden="true" />
+          <span className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[radial-gradient(circle,var(--gold)_0%,transparent_70%)] opacity-20 transition-opacity duration-300 group-hover:opacity-40" />
+          <span className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--gold),#e8c87a)] text-[oklch(0.2_0.03_255)] shadow-lg shadow-[var(--gold)]/30 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
+            <GraduationCap className="h-7 w-7" aria-hidden="true" />
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-foreground">Peserta</span>
-            <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Masuk untuk menampilkan kode presensi</span>
+          <span className="relative min-w-0 flex-1">
+            <span className="block font-serif text-lg font-semibold text-foreground">Saya Peserta</span>
+            <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+              Daftar akun, masuk, dan tampilkan kode QR presensi kegiatan
+            </span>
+            <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--gold)] opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
+              Masuk sekarang <ChevronRight className="h-3.5 w-3.5" />
+            </span>
           </span>
-          <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" aria-hidden="true" />
         </button>
 
         <button
           onClick={() => setChoice("panitia")}
-          className="group flex min-h-32 items-center gap-4 rounded-2xl border border-border bg-card/80 p-5 text-left shadow-xl shadow-black/10 transition hover:-translate-y-0.5 hover:border-accent/60 hover:bg-card"
+          className="lift sheen-host animate-rise-3 group relative flex min-h-40 flex-col items-start gap-4 overflow-hidden rounded-3xl border border-white/12 bg-gradient-to-br from-white/[0.08] to-white/[0.03] p-6 text-left backdrop-blur-xl hover:border-[var(--blue)]/60"
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-            <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+          <span className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[radial-gradient(circle,var(--blue)_0%,transparent_70%)] opacity-20 transition-opacity duration-300 group-hover:opacity-40" />
+          <span className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--blue),var(--purple))] text-white shadow-lg shadow-[var(--blue)]/30 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
+            <ShieldCheck className="h-7 w-7" aria-hidden="true" />
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-foreground">Panitia</span>
-            <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">Kelola verifikasi dan rekap presensi</span>
+          <span className="relative min-w-0 flex-1">
+            <span className="block font-serif text-lg font-semibold text-foreground">Saya Panitia</span>
+            <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+              Scan QR, verifikasi kehadiran, dan unduh rekap peserta
+            </span>
+            <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--blue)] opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
+              Buka dashboard <ChevronRight className="h-3.5 w-3.5" />
+            </span>
           </span>
-          <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-accent" aria-hidden="true" />
         </button>
+      </div>
+
+      {/* Feature strip to fill the page with useful context */}
+      <div className="animate-rise-4 grid grid-cols-3 gap-3 text-center">
+        {[
+          { icon: QrCode, label: "Scan QR", desc: "Verifikasi cepat" },
+          { icon: Zap, label: "Real-time", desc: "Rekap langsung" },
+          { icon: ShieldCheck, label: "Aman", desc: "Kode unik 16 digit" },
+        ].map((f) => (
+          <div key={f.label} className="rounded-2xl border border-white/8 bg-white/[0.04] px-2 py-3 backdrop-blur-sm">
+            <f.icon className="mx-auto mb-1.5 h-4 w-4 text-[var(--gold)]" aria-hidden="true" />
+            <p className="text-xs font-semibold text-foreground">{f.label}</p>
+            <p className="text-[11px] text-muted-foreground">{f.desc}</p>
+          </div>
+        ))}
       </div>
     </div>
   )

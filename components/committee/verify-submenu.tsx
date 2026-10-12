@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Camera, CameraOff, ScanLine, CheckCircle2, XCircle, Info } from "lucide-react"
+import { Camera, CameraOff, ScanLine, CheckCircle2, XCircle, Info, Loader2 } from "lucide-react"
 import { QrScanner } from "@/components/qr-scanner"
 import { GradientButton } from "@/components/ui-kit"
 import { verifyCode } from "@/app/actions/committee"
@@ -18,6 +18,14 @@ export function VerifySubmenu({ event }: { event: string }) {
   const [result, setResult] = useState<Result | null>(null)
   const [pending, startTransition] = useTransition()
   const router = useRouter()
+
+  const onScan = useCallback(
+    (text: string) => {
+      submit(text)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [submit],
+  )
 
   const submit = useCallback(
     (raw: string) => {
@@ -41,35 +49,34 @@ export function VerifySubmenu({ event }: { event: string }) {
           kelas: res.kelas!,
           nomor: res.nomor!,
         })
+        setManual("")
         router.refresh()
       })
     },
     [event, router],
   )
 
-  const onScan = useCallback(
-    (text: string) => {
-      submit(text)
-    },
-    [submit],
-  )
-
   return (
     <div className="grid gap-4">
       <button
         onClick={() => setScanning((s) => !s)}
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/[0.05] px-4 py-3 text-base font-semibold text-foreground transition hover:bg-white/10"
+        className={
+          "inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-base font-semibold transition-all duration-200 active:scale-[0.98] " +
+          (scanning
+            ? "border-destructive/50 bg-destructive/15 text-foreground hover:bg-destructive/25"
+            : "border-[var(--gold)]/40 bg-[var(--gold)]/10 text-foreground hover:bg-[var(--gold)]/20")
+        }
       >
-        {scanning ? <CameraOff className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
+        {scanning ? <CameraOff className="h-5 w-5" /> : <Camera className="h-5 w-5 text-[var(--gold)]" />}
         {scanning ? "Matikan Kamera" : "Scan dengan Kamera"}
       </button>
 
-      <QrScanner active={scanning} onResult={onScan} />
+      {scanning && <QrScanner event={event} />}
 
       <div className="flex items-center gap-3">
-        <div className="h-px flex-1 bg-white/15" />
+        <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/20" />
         <span className="text-xs uppercase tracking-wide text-muted-foreground">atau input manual</span>
-        <div className="h-px flex-1 bg-white/15" />
+        <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/20" />
       </div>
 
       <form
@@ -84,19 +91,40 @@ export function VerifySubmenu({ event }: { event: string }) {
           value={manual}
           onChange={(e) => setManual(e.target.value.replace(/\D/g, "").slice(0, 16))}
           placeholder="Masukkan 16 digit kode unik"
-          className="w-full rounded-2xl border border-white/15 bg-white/[0.06] px-4 py-3 text-center font-mono text-lg tracking-[0.2em] text-foreground outline-none focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/40"
+          aria-label="Kode unik 16 digit"
+          className="w-full rounded-2xl border border-white/15 bg-white/[0.06] px-4 py-3 text-center font-mono text-lg tracking-[0.2em] text-foreground outline-none transition-all placeholder:text-sm placeholder:tracking-normal placeholder:text-muted-foreground focus:border-[var(--gold)] focus:bg-white/[0.09] focus:ring-2 focus:ring-[var(--gold)]/40"
         />
+        {/* Digit progress indicator */}
+        <div className="mx-auto flex gap-1" aria-hidden="true">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <span
+              key={i}
+              className={
+                "h-1 w-10 rounded-full transition-colors duration-300 " +
+                (manual.length >= (i + 1) * 4 ? "bg-[var(--gold)]" : "bg-white/10")
+              }
+            />
+          ))}
+        </div>
         <GradientButton type="submit" disabled={pending || manual.length !== 16}>
-          <ScanLine className="h-5 w-5" /> {pending ? "Memverifikasi..." : "Verifikasi Kode"}
+          {pending ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" /> Memverifikasi...
+            </>
+          ) : (
+            <>
+              <ScanLine className="h-5 w-5" /> Verifikasi Kode ({manual.length}/16)
+            </>
+          )}
         </GradientButton>
       </form>
 
       {result ? (
         <div
           className={
-            "flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm " +
+            "animate-pop flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm " +
             (result.kind === "success"
-              ? "border-emerald-400/40 bg-emerald-400/15"
+              ? "pulse-success border-emerald-400/40 bg-emerald-400/15"
               : result.kind === "already"
                 ? "border-[var(--gold)]/40 bg-[var(--gold)]/15"
                 : "border-destructive/40 bg-destructive/15")
@@ -115,7 +143,7 @@ export function VerifySubmenu({ event }: { event: string }) {
             ) : (
               <>
                 <p className="font-semibold">
-                  {result.kind === "already" ? "Sudah terverifikasi sebelumnya" : "Presensi berhasil!"}
+                  {result.kind === "already" ? "Sudah terverifikasi sebelumnya" : "Presensi berhasil! 🎉"}
                 </p>
                 <p className="text-foreground/80">
                   {result.nama} &mdash; {result.kelas} No. {result.nomor}

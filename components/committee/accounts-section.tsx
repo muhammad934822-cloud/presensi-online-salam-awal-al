@@ -31,9 +31,10 @@ export function AccountsSection({ accounts }: { accounts: AccountRow[] }) {
       </p>
 
       {accounts.length === 0 ? (
-        <p className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-muted-foreground">
-          Belum ada akun peserta terdaftar.
-        </p>
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-8 text-center">
+          <Users className="h-8 w-8 text-muted-foreground/60" />
+          <p className="text-sm text-muted-foreground">Belum ada akun peserta terdaftar.</p>
+        </div>
       ) : (
         <ul className="grid gap-2">
           {accounts.map((a) => {
@@ -41,14 +42,14 @@ export function AccountsSection({ accounts }: { accounts: AccountRow[] }) {
             return (
               <li
                 key={a.id}
-                className="flex items-center gap-3 rounded-2xl border border-white/12 bg-white/[0.05] px-4 py-3"
+                className="lift flex items-center gap-3 rounded-2xl border border-white/12 bg-white/[0.05] px-4 py-3"
               >
                 <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-xs font-semibold text-foreground">
                   {a.nomorPresensi}
                   <span
                     className={
                       "absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[var(--background)] " +
-                      (active ? "bg-emerald-400" : "bg-zinc-500")
+                      (active ? "bg-emerald-400 shadow-[0_0_8px_2px_rgba(52,211,153,0.5)]" : "bg-zinc-500")
                     }
                   />
                 </span>
