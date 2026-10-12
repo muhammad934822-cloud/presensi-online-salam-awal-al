@@ -54,8 +54,7 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
             <GraduationCap className="h-7 w-7" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-lg font-semibold text-foreground">Peserta</span>
-            <span className="text-sm text-muted-foreground">Daftar / masuk dan tampilkan QR presensi</span>
+            <span className="block text-base font-semibold text-foreground">Peserta</span>
           </span>
           <ChevronRight className="h-5 w-5 text-foreground/50 transition group-hover:translate-x-0.5" />
         </button>
@@ -68,8 +67,7 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
             <ShieldCheck className="h-7 w-7" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-lg font-semibold text-foreground">Panitia</span>
-            <span className="text-sm text-muted-foreground">Verifikasi kode & kelola presensi</span>
+            <span className="block text-base font-semibold text-foreground">Panitia</span>
           </span>
           <ChevronRight className="h-5 w-5 text-foreground/50 transition group-hover:translate-x-0.5" />
         </button>
