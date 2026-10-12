@@ -44,6 +44,7 @@ export function ParticipantHome({
       <BrandHeader compact />
 
       <div className="mt-6">
+        <div className="mb-5"><p className="section-kicker">Ruang peserta</p><h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Halo, {nama.split(" ")[0]}.</h1><p className="mt-1 text-sm text-muted-foreground">Pilih agenda untuk menampilkan bukti presensi.</p></div>
         <GlassCard className="mb-5">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -63,6 +64,8 @@ export function ParticipantHome({
         </GlassCard>
 
         {selected === null ? (
+          <div>
+            <div className="mb-3 flex items-center justify-between"><p className="text-sm font-medium text-foreground">Agenda presensi</p><p className="text-xs text-muted-foreground">{EVENTS.filter((ev) => codes[ev]?.verifiedAt).length}/{EVENTS.length} selesai</p></div>
           <div className="grid gap-3">
             {EVENTS.map((ev) => {
               const Icon = ICONS[ev]
@@ -90,6 +93,7 @@ export function ParticipantHome({
                 </button>
               )
             })}
+            </div>
           </div>
         ) : (
           <div>
