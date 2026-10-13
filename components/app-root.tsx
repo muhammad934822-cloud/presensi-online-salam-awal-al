@@ -173,9 +173,9 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
         ))}
       </div>
 
-      {/* Footer meriah */}
+      {/* Footer hak cipta */}
       <p className="animate-rise-4 text-center text-[11px] text-muted-foreground/70">
-        ✨ Dibuat untuk kelancaran Salam Awal Al Uswah — presensi cepat, rekap rapi, data aman.
+        © Salam Awal Al Uswah 1448 H
       </p>
     </div>
   )
