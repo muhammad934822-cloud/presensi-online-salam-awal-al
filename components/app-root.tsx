@@ -35,9 +35,8 @@ export function AppRoot({ participant, codes, committee, recaps, accounts, activ
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-col justify-center gap-8 text-center">
         <BrandHeader />
-        <div className="animate-rise mx-auto">
-          <LiveClock />
-        </div>
+        {/* Jam BESAR sebagai jam utama halaman depan */}
+        <LiveClock size="lg" />
         <div className="animate-rise-2 mx-auto max-w-md">
           <span className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-[linear-gradient(135deg,var(--gold),var(--purple)_60%,var(--blue))] text-white shadow-xl shadow-[var(--purple)]/30">
             {isPanitia ? <ShieldCheck className="h-10 w-10" /> : <GraduationCap className="h-10 w-10" />}
@@ -88,10 +87,8 @@ export function AppRoot({ participant, codes, committee, recaps, accounts, activ
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col justify-center gap-10">
-      {/* Jam real-time di pojok atas halaman depan */}
-      <div className="flex justify-center sm:justify-end">
-        <LiveClock />
-      </div>
+      {/* Jam real-time BESAR di atas pilihan masuk panitia/peserta */}
+      <LiveClock size="lg" />
       <div className="text-center sm:text-left">
         {/* Badge meriah */}
         <span className="animate-rise inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-xs font-semibold text-foreground/90 backdrop-blur">

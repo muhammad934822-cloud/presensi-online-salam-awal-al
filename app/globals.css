@@ -287,33 +287,60 @@
   --panel: oklch(0.16 0.024 255 / 0.82);
 }
 
-/* ---------- Light theme ("Terang") ---------- */
+/* ---------- Light theme ("Terang") — palet hangat & mudah dibaca, bukan sekadar invers hitam/putih ---------- */
 .theme-light {
   color-scheme: light;
-  --background: oklch(0.97 0.008 255);
-  --foreground: oklch(0.22 0.03 258);
-  --card: oklch(0.99 0.004 255);
-  --card-foreground: oklch(0.22 0.03 258);
-  --popover: oklch(0.99 0.004 255);
-  --popover-foreground: oklch(0.22 0.03 258);
-  --primary: oklch(0.62 0.14 82);
+  --background: oklch(0.965 0.012 85);
+  --foreground: oklch(0.24 0.03 258);
+  --card: oklch(0.995 0.006 85);
+  --card-foreground: oklch(0.24 0.03 258);
+  --popover: oklch(0.995 0.006 85);
+  --popover-foreground: oklch(0.24 0.03 258);
+  --primary: oklch(0.55 0.13 75);
   --primary-foreground: oklch(0.99 0.004 255);
-  --secondary: oklch(0.94 0.012 255);
-  --secondary-foreground: oklch(0.22 0.03 258);
-  --muted: oklch(0.94 0.01 255);
-  --muted-foreground: oklch(0.45 0.02 258);
-  --accent: oklch(0.68 0.12 235);
+  --secondary: oklch(0.93 0.016 85);
+  --secondary-foreground: oklch(0.24 0.03 258);
+  --muted: oklch(0.93 0.014 85);
+  --muted-foreground: oklch(0.42 0.025 258);
+  --accent: oklch(0.5 0.14 235);
   --accent-foreground: oklch(0.99 0.004 255);
-  --destructive: oklch(0.58 0.21 25);
-  --border: oklch(0.3 0.02 258 / 14%);
-  --input: oklch(0.3 0.02 258 / 16%);
-  --ring: oklch(0.62 0.14 82);
-  --gold: oklch(0.62 0.14 82);
-  --purple: oklch(0.5 0.13 290);
-  --blue: oklch(0.55 0.13 235);
-  --line: oklch(0.3 0.02 258 / 14%);
-  --panel: oklch(0.99 0.004 255 / 0.85);
+  --destructive: oklch(0.55 0.21 25);
+  --border: oklch(0.4 0.03 85 / 18%);
+  --input: oklch(0.4 0.03 85 / 20%);
+  --ring: oklch(0.55 0.13 75);
+  --gold: oklch(0.55 0.13 75);
+  --purple: oklch(0.46 0.16 290);
+  --blue: oklch(0.48 0.15 235);
+  --line: oklch(0.35 0.03 258 / 16%);
+  --panel: oklch(0.99 0.008 85 / 0.92);
 }
+
+/* ---------- Tema terang: koreksi elemen hardcode (overlay putih, teks putih di atas gradien, latar gelap) ---------- */
+
+/* Overlay putih jadi tinta gelap lembut di tema terang */
+.theme-light .bg-white\/5 { background: oklch(0.3 0.02 258 / 6%); }
+.theme-light .hover\:bg-white\/5:hover { background: oklch(0.3 0.02 258 / 7%); }
+.theme-light .bg-white\/\\[0\.12\\] { background: oklch(0.3 0.02 258 / 13%); }
+.theme-light .bg-white\/\\[0\.25\\] { background: oklch(0.3 0.02 258 / 18%); }
+.theme-light .border-white\/10 { border-color: oklch(0.3 0.02 258 / 14%); }
+.theme-light .border-white\/8 { border-color: oklch(0.3 0.02 258 / 12%); }
+.theme-light .border-white\/35 { border-color: oklch(0.3 0.02 258 / 22%); }
+
+/* Teks putih di atas tombol/ikon bergradien emas-ungu-biru: warna gradiennya dibuat lebih pekat
+   supaya teks putih tetap kontras & enak dibaca (bukan hanya dibalik hitam-putih) */
+.theme-light [class*="from-[var(--gold)]"],
+.theme-light [class*="bg-[linear-gradient"] { filter: saturate(1.15) brightness(0.82); }
+.theme-light [class*="text-white/80"] { color: rgba(255, 255, 255, 0.92); }
+
+/* Latar literal gelap (mis. placeholder kode QR) jadi kertas terang */
+.theme-light .bg-\[\#0f0a1e\] { background: #ffffff; }
+
+/* Kartu kaca: sudut membulat penuh + bayangan hangat lembut agar tidak "kotak" di tema terang */
+.theme-light .backdrop-blur-xl,
+.theme-light .backdrop-blur-md,
+.theme-light .backdrop-blur-sm { border-radius: inherit; }
+.theme-light [class*="rounded-3xl"][class*="border"],
+.theme-light [class*="rounded-2xl"][class*="border"] { box-shadow: 0 1px 2px oklch(0.35 0.03 85 / 8%), 0 10px 28px -18px oklch(0.35 0.03 85 / 30%); }
 
 /* Glass card inner surface follows theme */
 .theme-light .bg-\[oklch\(0\.16_0\.024_258\/0\.82\)\] {

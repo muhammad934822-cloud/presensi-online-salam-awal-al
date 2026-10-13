@@ -10,7 +10,11 @@ import { BrandHeader } from "./brand-header"
  * Jam digital real-time. Sengaja hanya dirender di client (null saat SSR)
  * supaya tidak pernah terjadi hydration mismatch.
  */
-export function LiveClock({ className = "" }: { className?: string }) {
+/**
+ * `size="lg"` -> chip besar untuk halaman depan (jam utama).
+ * Default kecil untuk header dashboard.
+ */
+export function LiveClock({ className = "", size = "sm" }: { className?: string; size?: "sm" | "lg" }) {
   const [now, setNow] = useState<Date | null>(null)
 
   useEffect(() => {
@@ -21,13 +25,30 @@ export function LiveClock({ className = "" }: { className?: string }) {
 
   if (!now) return <span className={"inline-block h-5 w-24 rounded-lg bg-white/10 " + className} aria-hidden="true" />
 
-  const time = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
   const date = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "short" })
   // Label zona waktu mengikuti timezone browser pengunjung (bukan hardcode WIB),
   // jadi tetap akurat untuk panitia/peserta di mana pun.
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "WIB"
   const tzShort = tz.includes("Makassar") || tz.includes("Balikpapan") ? "WITA" : tz.includes("Jayapura") ? "WIT" : tz.includes("Jakarta") ? "WIB" : tz.split("/").pop() || tz
 
+  if (size === "lg") {
+    // Versi besar & elegan — jam utama halaman depan. Detik ditampilkan lebih redup.
+    const hm = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false })
+    const ss = String(now.getSeconds()).padStart(2, "0")
+    return (
+      <div className={"animate-rise mx-auto inline-flex flex-col items-center gap-1 rounded-3xl border border-[var(--line)] bg-white/[0.05] px-6 py-3 text-center backdrop-blur-md " + className}>
+        <span className="flex items-baseline gap-1 font-semibold tabular-nums leading-none tracking-tight text-foreground">
+          <Clock className="mr-1.5 self-center h-5 w-5 shrink-0 text-[var(--gold)]" aria-hidden="true" />
+          <span className="text-3xl sm:text-4xl">{hm}</span>
+          <span className="text-lg text-muted-foreground">:{ss}</span>
+          <span className="ml-1.5 self-center text-xs font-bold uppercase tracking-widest text-[var(--gold)]">{tzShort}</span>
+        </span>
+        <span className="text-xs text-muted-foreground">{date}</span>
+      </div>
+    )
+  }
+
+  const time = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
   return (
     <span className={"inline-flex items-center gap-2 rounded-xl border border-[var(--line)] bg-white/[0.06] px-3 py-1.5 backdrop-blur-sm " + className}>
       <Clock className="h-3.5 w-3.5 shrink-0 text-[var(--gold)]" aria-hidden="true" />
@@ -138,8 +159,9 @@ export function DashboardShell({
         </div>
       </aside>
 
-      {/* Main column */}
-      <div className="min-w-0 flex-1">
+      {/* Main column — drawer tertutup, jadi konten selalu rata tengah & proporsional
+          di portrait maupun landscape */}
+      <div className="mx-auto min-w-0 max-w-3xl flex-1">
         <div className="mb-4 flex items-center gap-3">
           <button
             onClick={() => setOpen(true)}
@@ -150,7 +172,7 @@ export function DashboardShell({
             Menu
           </button>
           <div className="min-w-0 flex-1">{headerLeft}</div>
-          <LiveClock className="hidden shrink-0 sm:inline-flex" />
+          <LiveClock className="hidden shrink-0 lg:inline-flex" />
           <ThemeToggle className="lg:hidden" />
         </div>
         {children}

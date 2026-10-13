@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, CheckCircle2, Circle, ScanFace, Settings, Home, Lightbulb } from "lucide-react"
 import { GlassCard } from "./ui-kit"
 import { QrPanel } from "./qr-panel"
-import { DashboardShell, LiveClock, type DashSection } from "./dashboard-shell"
+import { DashboardShell, type DashSection } from "./dashboard-shell"
 import { SettingsPanel } from "./settings-panel"
 import { AttendanceCelebration } from "./attendance-celebration"
 import { EVENTS, EVENT_LABELS, type EventKey } from "@/lib/db/schema"
@@ -98,7 +98,7 @@ export function ParticipantHome({
   /* ---------- Konten per section ---------- */
 
   const beranda = (
-    <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-none">
+    <div className="w-full">
       {/* Hero profil */}
       <GlassCard glow className="animate-rise-1 mb-5 overflow-hidden">
         <div className="relative flex items-center gap-4">
@@ -205,7 +205,7 @@ export function ParticipantHome({
   )
 
   const presensi = (
-    <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-none">
+    <div className="w-full">
       {!selected ? (
         <div className="grid gap-3">
           <p className="mb-1 flex items-center gap-2 px-1 text-sm text-muted-foreground">
@@ -265,7 +265,7 @@ export function ParticipantHome({
   )
 
   const pengaturan = (
-    <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-2xl">
+    <div className="w-full">
       <SettingsPanel role="peserta" nama={nama} />
     </div>
   )
@@ -288,7 +288,6 @@ export function ParticipantHome({
                 {kelas} · No. {nomorPresensi} · {verifiedCount}/{EVENTS.length} hadir
               </p>
               </div>
-              <LiveClock className="hidden shrink-0 md:inline-flex" />
               {onExit && (
                 <button
                   onClick={onExit}

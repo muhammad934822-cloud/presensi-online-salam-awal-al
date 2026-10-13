@@ -7,7 +7,7 @@ import { GlassCard } from "./ui-kit"
 import { VerifySubmenu } from "./committee/verify-submenu"
 import { RecapSubmenu } from "./committee/recap-submenu"
 import { AccountsSection } from "./committee/accounts-section"
-import { DashboardShell, LiveClock, type DashSection } from "./dashboard-shell"
+import { DashboardShell, type DashSection } from "./dashboard-shell"
 import { SettingsPanel } from "./settings-panel"
 import { ActivityList } from "./activity-list"
 import { EVENTS, EVENT_LABELS, type EventKey } from "@/lib/db/schema"
@@ -43,7 +43,7 @@ export function CommitteeHome({
 
   /* ---------- Beranda ---------- */
   const beranda = (
-    <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-none">
+    <div className="w-full">
       {/* Statistik ringkas */}
       <div className="mb-5 grid grid-cols-3 gap-3">
         {[
@@ -193,7 +193,7 @@ export function CommitteeHome({
 
   /* ---------- Presensi (scan & rekap per kegiatan) ---------- */
   const presensi = (
-    <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-2xl">
+    <div className="w-full">
       {!selected ? (
         <div className="grid gap-3">
           <p className="mb-1 flex items-center gap-2 px-1 text-sm text-muted-foreground">
@@ -273,21 +273,21 @@ export function CommitteeHome({
 
   /* ---------- Daftar peserta ---------- */
   const peserta = (
-    <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-2xl">
+    <div className="w-full">
       <AccountsSection accounts={accounts} />
     </div>
   )
 
   /* ---------- Pengaturan ---------- */
   const pengaturan = (
-    <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-2xl">
+    <div className="w-full">
       <SettingsPanel role="panitia" />
     </div>
   )
 
   /* ---------- Riwayat lengkap (semua aktivitas terekap) ---------- */
   const riwayat = (
-    <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-2xl animate-rise">
+    <div className="w-full animate-rise">
       <div className="mb-4 flex items-center gap-3">
         <button
           onClick={() => setSection("beranda")}
@@ -309,7 +309,7 @@ export function CommitteeHome({
 
   /* ---------- Detail kehadiran per kelas ---------- */
   const kelasDetail = (
-    <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-2xl animate-rise">
+    <div className="w-full animate-rise">
       <div className="mb-4 flex items-center gap-3">
         <button
           onClick={() => setSection("beranda")}
@@ -379,7 +379,6 @@ export function CommitteeHome({
                   {accounts.length} akun · {totalVerified}/{totalShown || 0} kehadiran tervalidasi
                 </p>
               </div>
-              <LiveClock className="hidden shrink-0 md:inline-flex" />
               {onExit && (
                 <button
                   onClick={onExit}
