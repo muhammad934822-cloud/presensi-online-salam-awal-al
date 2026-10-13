@@ -63,7 +63,7 @@ export function ParticipantHome({
     const tick = () => {
       if (alive && document.visibilityState === "visible") router.refresh()
     }
-    const id = window.setInterval(tick, 3000)
+    const id = window.setInterval(tick, 2000)
     const onFocus = () => tick()
     window.addEventListener("focus", onFocus)
     document.addEventListener("visibilitychange", onFocus)

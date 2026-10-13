@@ -64,29 +64,29 @@ export function DashboardShell({
   headerLeft?: ReactNode
   children: ReactNode
 }) {
+  // Dashboard TERTUTUP default di semua ukuran layar — dibuka lewat tombol menu.
   const [open, setOpen] = useState(false)
   const items = NAV.filter((n) => sections.includes(n.key))
 
   return (
     <div className="relative mx-auto flex w-full max-w-6xl gap-6">
-      {/* Backdrop mobile */}
+      {/* Backdrop (semua ukuran) — klik untuk menutup */}
       {open && (
         <button
           aria-label="Tutup menu"
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm"
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar drawer: tertutup default, meluncur dari kiri saat dibuka */}
       <aside
         className={
-          "z-40 flex shrink-0 flex-col transition-transform duration-300 ease-out " +
-          "fixed inset-y-0 left-0 w-64 p-4 lg:static lg:h-auto lg:w-56 lg:translate-x-0 lg:p-0 " +
-          (open ? "translate-x-0" : "-translate-x-full")
+          "z-40 fixed inset-y-0 left-0 flex w-64 shrink-0 flex-col p-4 transition-transform duration-300 ease-out " +
+          (open ? "translate-x-0" : "-translate-x-full pointer-events-none")
         }
       >
-        <div className="flex h-full flex-col rounded-3xl border border-[var(--line)] bg-[var(--panel)] p-3 shadow-2xl backdrop-blur-xl lg:sticky lg:top-6">
+        <div className="flex h-full max-h-full flex-col overflow-y-auto rounded-3xl border border-[var(--line)] bg-[var(--panel)] p-3 shadow-2xl backdrop-blur-xl">
           {/* Brand kecil di atas sidebar (menggantikan header besar yang sebelumnya bertumpuk/tabrakan) */}
           <div className="mb-4 px-1 pt-1">
             <BrandHeader compact />
@@ -144,9 +144,10 @@ export function DashboardShell({
           <button
             onClick={() => setOpen(true)}
             aria-label="Buka menu"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--line)] bg-white/[0.05] text-foreground transition hover:border-[var(--gold)]/50 hover:bg-white/10 active:scale-95 lg:hidden"
+            className="group inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--line)] bg-white/[0.05] px-3 text-sm font-semibold text-foreground transition hover:border-[var(--gold)]/50 hover:bg-white/10 active:scale-95"
           >
-            <LayoutDashboard className="h-4.5 w-4.5" />
+            <LayoutDashboard className="h-4.5 w-4.5 text-[var(--gold)] transition-transform duration-300 group-hover:-rotate-6" />
+            Menu
           </button>
           <div className="min-w-0 flex-1">{headerLeft}</div>
           <LiveClock className="hidden shrink-0 sm:inline-flex" />
