@@ -3,9 +3,10 @@ import { GraduationCap } from "lucide-react"
 export function BrandHeader({ compact = false }: { compact?: boolean }) {
   return (
     <header className="animate-rise flex items-center gap-4">
-      {/* Logo with rotating conic ring */}
+      {/* Logo with slowly rotating conic ring + soft breathing halo */}
       <div className="relative shrink-0">
-        <span className="conic-ring absolute -inset-1 rounded-2xl opacity-70 blur-[2px]" aria-hidden="true" />
+        <span className="logo-halo absolute -inset-3 rounded-3xl bg-[radial-gradient(circle,var(--gold)_0%,transparent_70%)] opacity-50 blur-lg" aria-hidden="true" />
+        <span className="conic-ring absolute -inset-1 rounded-2xl opacity-60 blur-[2px]" aria-hidden="true" />
         <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--gold)] via-[#c98f3d] to-[var(--purple)] text-white shadow-lg shadow-[var(--gold)]/20">
           <GraduationCap className="h-6 w-6" aria-hidden="true" />
         </div>

@@ -15,7 +15,7 @@ import {
 } from "lucide-react"
 import { GlassCard, TextField, GradientButton, GhostButton } from "./ui-kit"
 import { useTheme } from "./theme-provider"
-import { updateParticipantName, changePasswordSelf } from "@/app/actions/participant"
+import { updateParticipantName, changePasswordSelfWithKode } from "@/app/actions/participant"
 
 /**
  * Panel Pengaturan yang dipakai peserta & panitia dengan tampilan sama:
@@ -36,8 +36,8 @@ export function SettingsPanel({
   const [ newName, setNewName ] = useState("")
   const [nameMsg, setNameMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
-  // Ganti password
-  const [oldPass, setOldPass] = useState("")
+  // Ganti password (peserta — wajib kode unik, bukan password lama)
+  const [kodeUnik, setKodeUnik] = useState("")
   const [newPass, setNewPass] = useState("")
   const [passMsg, setPassMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
@@ -60,12 +60,12 @@ export function SettingsPanel({
     setPassMsg(null)
     startTransition(async () => {
       const fd = new FormData()
-      fd.set("currentPassword", oldPass)
+      fd.set("kodeUnik", kodeUnik)
       fd.set("newPassword", newPass)
-      const res = await changePasswordSelf(fd)
+      const res = await changePasswordSelfWithKode(fd)
       setPassMsg(res.ok ? { ok: true, text: "Password berhasil diganti 🔒" } : { ok: false, text: res.error ?? "Gagal." })
       if (res.ok) {
-        setOldPass("")
+        setKodeUnik("")
         setNewPass("")
       }
     })
@@ -149,16 +149,16 @@ export function SettingsPanel({
             </span>
             <div>
               <p className="font-semibold text-foreground">Ganti Password</p>
-              <p className="text-xs text-muted-foreground">Password lama tidak akan bisa dipakai lagi</p>
+              <p className="text-xs text-muted-foreground">Verifikasi dengan kode unik akunmu, lalu buat password baru</p>
             </div>
           </div>
           <div className="grid gap-3">
             <TextField
-              label="Password lama"
+              label="Kode Unik"
               type="password"
-              placeholder="••••••••"
-              value={oldPass}
-              onChange={(e) => setOldPass(e.target.value)}
+              placeholder="Kode unik yang kamu pakai saat daftar akun"
+              value={kodeUnik}
+              onChange={(e) => setKodeUnik(e.target.value)}
             />
             <TextField
               label="Password baru"
@@ -172,7 +172,7 @@ export function SettingsPanel({
                 {passMsg.ok && <CheckCircle2 className="h-4 w-4" />} {passMsg.text}
               </p>
             )}
-            <GradientButton onClick={savePassword} disabled={pending || !oldPass || newPass.length < 6}>
+            <GradientButton onClick={savePassword} disabled={pending || !kodeUnik || newPass.length < 6}>
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Perbarui Password
             </GradientButton>
           </div>

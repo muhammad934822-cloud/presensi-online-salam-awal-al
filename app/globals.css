@@ -129,7 +129,16 @@
     from var(--ring-angle),
     var(--gold), var(--purple), var(--blue), var(--gold)
   );
-  animation: spin-conic 4s linear infinite;
+  animation: spin-conic 16s linear infinite;
+}
+
+/* Halo lembut yang "bernapas" pelan di sekitar logo — halus, tidak heboh */
+.logo-halo {
+  animation: halo-breathe 4.5s ease-in-out infinite;
+}
+@keyframes halo-breathe {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.07); }
 }
 
 /* Scanning laser line inside the camera viewfinder */
@@ -439,7 +448,8 @@
   .conic-ring, .scanline, .pulse-success, .animate-soft-ping,
   .success-flash-layer, .animate-stamp, .animate-ring-burst,
   .check-draw path, .confetti-piece, .animate-banner-pop,
-  .rainbow-sweep, .success-hue-ring, .confetti-rain > span, .text-rainbow-shine {
+  .rainbow-sweep, .success-hue-ring, .confetti-rain > span, .text-rainbow-shine,
+  .logo-halo {
     animation: none !important;
   }
 }

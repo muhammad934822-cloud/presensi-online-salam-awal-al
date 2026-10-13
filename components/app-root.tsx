@@ -88,7 +88,10 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
           <Sparkles className="h-3.5 w-3.5 text-[var(--gold)]" aria-hidden="true" />
           🕌 Salam Awal Al Uswah — Presensi Digital
         </span>
-        <BrandHeader />
+        {/* Jarak aman: badge tidak menempel ke judul di bawahnya */}
+        <div className="mt-7">
+          <BrandHeader />
+        </div>
         <p className="animate-rise-1 mt-5 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
           Sistem presensi digital untuk kegiatan <span className="font-bold text-[var(--gold)]">Salam Awal Al Uswah</span>.
           Masuk sebagai peserta untuk menampilkan kode QR presensi, atau sebagai panitia untuk memverifikasi dan merekap kehadiran.
