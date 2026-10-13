@@ -55,6 +55,41 @@ export function CommitteeHome({
         ))}
       </div>
 
+          {/* Progress kehadiran per kegiatan */}
+          <GlassCard className="animate-rise-2 mb-5">
+            <div className="px-4 py-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Activity className="h-4 w-4 text-[var(--gold)]" /> Progress Kehadiran Hari Ini
+                </p>
+                <span className="font-serif text-xl font-bold tabular-nums text-gradient-gold">
+                  {totalShown ? Math.round((totalVerified / totalShown) * 100) : 0}%
+                </span>
+              </div>
+              <div className="grid gap-3">
+                {EVENTS.map((ev) => {
+                  const rows = recaps[ev] ?? []
+                  const v = rows.filter((r) => r.verifiedAt).length
+                  const p = rows.length ? Math.round((v / rows.length) * 100) : 0
+                  return (
+                    <div key={ev}>
+                      <div className="mb-1 flex items-baseline justify-between gap-2 text-xs">
+                        <span className="min-w-0 truncate font-medium text-foreground/85">{EVENT_LABELS[ev]}</span>
+                        <span className="shrink-0 tabular-nums text-muted-foreground">{v}/{rows.length}</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full rounded-full bg-[linear-gradient(90deg,var(--gold),var(--purple),var(--blue))] transition-all duration-700 ease-out"
+                          style={{ width: `${Math.max(p, v > 0 ? 4 : 0)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </GlassCard>
+
       {/* Pilih kegiatan */}
       <p className="mb-3 px-1 font-serif text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         Kegiatan Salam Awal

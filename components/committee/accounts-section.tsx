@@ -80,7 +80,7 @@ export function AccountsSection({ accounts }: { accounts: AccountRow[] }) {
               <li
                 key={a.id}
                 style={{ animationDelay: `${Math.min(i, 12) * 0.04}s` }}
-                className="lift animate-rise flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-white/[0.05] px-4 py-3"
+                className="lift animate-rise flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-[var(--line)] bg-white/[0.05] px-4 py-3"
               >
                 <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-xs font-semibold text-foreground">
                   {a.nomorPresensi}
@@ -92,7 +92,7 @@ export function AccountsSection({ accounts }: { accounts: AccountRow[] }) {
                   />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{a.nama}</p>
+                  <p className="break-words text-sm font-medium leading-snug text-foreground">{a.nama}</p>
                   <p className="text-xs text-muted-foreground">
                     {a.kelas} &middot;{" "}
                     {active ? (
@@ -103,10 +103,12 @@ export function AccountsSection({ accounts }: { accounts: AccountRow[] }) {
                   </p>
                 </div>
 
-                <PasswordResetButton account={a} />
+                {/* Grup aksi: turun rapi ke baris baru jika nama panjang */}
+                <span className="ml-auto flex shrink-0 items-center gap-1.5 lg:ml-0">
+                  <PasswordResetButton account={a} />
 
-                {confirmId === a.id ? (
-                  <span className="flex items-center gap-1.5">
+                  {confirmId === a.id ? (
+                    <span className="flex items-center gap-1.5">
                     <button
                       onClick={() => remove(a.id)}
                       disabled={pending}
@@ -130,6 +132,7 @@ export function AccountsSection({ accounts }: { accounts: AccountRow[] }) {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 )}
+                </span>
               </li>
             )
           })}

@@ -79,6 +79,28 @@ export async function verifyCode(
   }
 }
 
+// Undo / hapus satu verifikasi presensi yang salah (dobel scan / orang salah).
+// Hanya mereset kolom `verified_at` yang sudah ada — baris attendance & data
+// peserta tetap utuh, sehingga QR bisa discan ulang secara normal.
+export async function unverifyAttendance(attendanceId: string): Promise<ActionResult> {
+  if (!(await isCommittee())) return { ok: false, error: "Tidak diizinkan." }
+
+  const [rec] = await db
+    .select({ id: attendance.id, verifiedAt: attendance.verifiedAt })
+    .from(attendance)
+    .where(eq(attendance.id, attendanceId))
+    .limit(1)
+  if (!rec) return { ok: false, error: "Data kehadiran tidak ditemukan." }
+  if (!rec.verifiedAt) return { ok: false, error: "Peserta ini belum terverifikasi." }
+
+  await db
+    .update(attendance)
+    .set({ verifiedAt: null })
+    .where(eq(attendance.id, rec.id))
+  revalidatePath("/")
+  return { ok: true }
+}
+
 export async function deleteParticipant(participantId: string): Promise<ActionResult> {
   if (!(await isCommittee())) return { ok: false, error: "Tidak diizinkan." }
   await db.delete(attendance).where(eq(attendance.participantId, participantId))

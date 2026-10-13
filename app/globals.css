@@ -438,6 +438,26 @@
   animation: rainbow-drift 8s ease-in-out infinite;
 }
 
+/* ---------- Finishing: ketahanan layout & kontras tema terang ---------- */
+
+/* Cegah elemen dekoratif (blob latar, halo) melebarkan halaman —
+   nama/teks panjang tidak lagi "offside" keluar layar. */
+html {
+  overflow-x: hidden;
+}
+
+/* Nama/kata sangat panjang selalu pecah rapi, tidak memaksa baris melebar */
+main {
+  overflow-wrap: break-word;
+}
+
+/* Tema terang: teks putih murni di dalam tombol/badge aktif harus jadi gelap
+   agar tetap terbaca di atas latar terang */
+.theme-light .text-white\/80,
+.theme-light .text-white\/70 {
+  color: oklch(0.25 0.03 255 / 90%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-slide-fade, .gradient-slide, .pulse-dot { animation: none !important; }
 }

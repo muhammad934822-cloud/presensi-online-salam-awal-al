@@ -3,6 +3,7 @@ import { participants, attendance, type EventKey } from "./db/schema"
 import { asc, eq } from "drizzle-orm"
 
 export type RecapRow = {
+  attendanceId: string
   participantId: string
   nama: string
   kelas: string
@@ -14,6 +15,7 @@ export type RecapRow = {
 export async function getRecapForEvent(event: EventKey): Promise<RecapRow[]> {
   const rows = await db
     .select({
+      attendanceId: attendance.id,
       participantId: participants.id,
       nama: participants.nama,
       kelas: participants.kelas,

@@ -102,7 +102,7 @@ export function ParticipantHome({
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs uppercase tracking-widest text-muted-foreground">Selamat datang kembali</p>
-            <p className="truncate text-lg font-semibold text-foreground">{nama}</p>
+            <p className="break-words text-balance text-lg font-semibold leading-snug text-foreground">{nama}</p>
             <p className="text-sm text-muted-foreground">
               {kelas} &middot; No. {nomorPresensi}
             </p>
@@ -273,7 +273,7 @@ export function ParticipantHome({
           headerLeft={
             <div className="min-w-0 flex items-center justify-between gap-2">
               <div className="min-w-0">
-              <p className="truncate font-serif text-lg font-semibold text-foreground">{nama}</p>
+              <p className="break-words font-serif text-lg font-semibold leading-snug text-foreground">{nama}</p>
               <p className="truncate text-xs text-muted-foreground">
                 {kelas} · No. {nomorPresensi} · {verifiedCount}/{EVENTS.length} hadir
               </p>
