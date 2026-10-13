@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
+import { Component, type ReactNode } from "react"
 import { Moon, Sun } from "lucide-react"
 
 type Theme = "dark" | "light"
@@ -16,28 +17,31 @@ export function useTheme() {
 
 function applyTheme(t: Theme) {
   const root = document.documentElement
-  if (t === "light") root.classList.add("theme-light")
-  else root.classList.remove("theme-light")
+  if (t === "light") {
+    root.classList.add("theme-light")
+    root.classList.remove("dark")
+  } else {
+    root.classList.remove("theme-light")
+    root.classList.add("dark")
+  }
   try {
     localStorage.setItem("presensi-theme", t)
   } catch {}
 }
 
-// Inline script in <body> sets the initial class before React mounts.
+// Baca tema dari DOM (di-set oleh inline script di layout sebelum React mount).
 function readInitialTheme(): Theme {
-  if (typeof window === "undefined") return "dark"
-  try {
-    const saved = localStorage.getItem("presensi-theme")
-    if (saved === "light" || saved === "dark") return saved
-  } catch {}
+  if (typeof document === "undefined") return "dark"
   return document.documentElement.classList.contains("theme-light") ? "light" : "dark"
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark")
+  const [theme, setTheme] = useState<Theme>(readInitialTheme)
 
+  // Sinkronkan sekali saat mount (mis. jika user mengubah via devtools / tab lain).
   useEffect(() => {
-    setTheme(readInitialTheme())
+    const t = readInitialTheme()
+    setTheme((prev) => (prev === t ? prev : t))
   }, [])
 
   const toggleTheme = useCallback(() => {
@@ -49,6 +53,52 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return <ThemeCtx.Provider value={{ theme, toggleTheme }}>{children}</ThemeCtx.Provider>
+}
+
+/* ---------- Error Boundary global ----------
+   Menangkap error render React (mis. crash tak terduga) supaya halaman
+   tetap tampil dengan pesan ramah + tombol muat ulang, bukan layar kosong. */
+class GlobalErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  componentDidCatch(error: unknown) {
+    console.error("Error boundary menangkap:", error)
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-4 px-6 text-center">
+          <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[linear-gradient(135deg,var(--gold),var(--purple))] text-2xl shadow-xl">
+            ⚠️
+          </span>
+          <h2 className="font-serif text-xl font-bold text-foreground">Terjadi kesalahan tampilan</h2>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Halaman tidak dapat dimuat. Coba muat ulang — data presensimu tetap aman tersimpan di database.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="min-h-12 rounded-2xl bg-[linear-gradient(100deg,var(--gold),var(--purple))] px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:brightness-110 active:scale-95"
+          >
+            Muat Ulang
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
+export function AppProviders({ children }: { children: ReactNode }) {
+  return (
+    <GlobalErrorBoundary>
+      <ThemeProvider>{children}</ThemeProvider>
+    </GlobalErrorBoundary>
+  )
 }
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
