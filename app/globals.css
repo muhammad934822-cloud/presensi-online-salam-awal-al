@@ -245,6 +245,14 @@
 }
 .animate-banner-pop { animation: banner-pop 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
 
+/* Toast selebrasi presensi peserta (melayang dari bawah) */
+@keyframes toast-up {
+  0%   { opacity: 0; transform: translateY(48px) scale(0.97); }
+  55%  { transform: translateY(-6px) scale(1.015); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-toast-up { animation: toast-up 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+
 /* Gradient text helper */
 .text-gradient-gold {
   background: linear-gradient(92deg, var(--gold), color-mix(in oklch, var(--gold) 55%, white));
@@ -468,6 +476,7 @@ main {
   .conic-ring, .scanline, .pulse-success, .animate-soft-ping,
   .success-flash-layer, .animate-stamp, .animate-ring-burst,
   .check-draw path, .confetti-piece, .animate-banner-pop,
+  .animate-toast-up,
   .rainbow-sweep, .success-hue-ring, .confetti-rain > span, .text-rainbow-shine,
   .logo-halo {
     animation: none !important;

@@ -7,6 +7,7 @@ import { GlassCard } from "./ui-kit"
 import { QrPanel } from "./qr-panel"
 import { DashboardShell, LiveClock, type DashSection } from "./dashboard-shell"
 import { SettingsPanel } from "./settings-panel"
+import { AttendanceCelebration } from "./attendance-celebration"
 import { EVENTS, EVENT_LABELS, type EventKey } from "@/lib/db/schema"
 
 type Codes = Record<string, { code: string; verifiedAt: Date | string | null }>
@@ -53,16 +54,16 @@ export function ParticipantHome({
   const [selected, setSelected] = useState<EventKey | null>(null)
   const router = useRouter()
 
-  /* Auto-refresh halus: status kehadiran peserta (hasil scan panitia) diambil
-     dari server. Polling ringan tiap 4 detik saat halaman aktif + refresh saat
-     tab kembali fokus, supaya begitu discan, tanda "Hadir" & animasi sukses
-     langsung muncul tanpa perlu reload manual. */
+  /* Sinkronisasi dashboard: refresh ringan tiap 15 detik + saat tab kembali
+     fokus, agar badge Hadir/progress ikut ter-update. Deteksi "baru saja
+     discan" untuk selebrasi + suara ditangani <AttendanceCelebration/>
+     (polling query baca kecil terpisah) — tidak ada penulisan DB. */
   useEffect(() => {
     let alive = true
     const tick = () => {
       if (alive && document.visibilityState === "visible") router.refresh()
     }
-    const id = window.setInterval(tick, 4000)
+    const id = window.setInterval(tick, 15000)
     const onFocus = () => tick()
     window.addEventListener("focus", onFocus)
     document.addEventListener("visibilitychange", onFocus)
@@ -73,6 +74,13 @@ export function ParticipantHome({
       document.removeEventListener("visibilitychange", onFocus)
     }
   }, [router])
+
+  /* Baseline status kehadiran utk detektor selebrasi */
+  const initialStatus: Record<string, string | null> = {}
+  for (const ev of EVENTS) {
+    const v = codes[ev]?.verifiedAt
+    initialStatus[ev] = v ? new Date(v).toISOString() : null
+  }
 
   const verifiedCount = EVENTS.filter((ev) => Boolean(codes[ev]?.verifiedAt)).length
   const initials = nama
@@ -264,6 +272,7 @@ export function ParticipantHome({
 
   return (
     <div className="w-full">
+      <AttendanceCelebration initial={initialStatus} />
       <DashboardShell
           sections={["beranda", "presensi", "pengaturan"]}
           active={section}

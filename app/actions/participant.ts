@@ -184,6 +184,22 @@ export async function changePasswordSelf(formData: FormData): Promise<ActionResu
   return { ok: true }
 }
 
+// Query baca RINGAN untuk polling klien: status kehadiran + waktu verifikasi
+// per kegiatan. Dipakai peserta untuk mendeteksi "baru saja discan" secara
+// realtime (suara + selebrasi) tanpa re-render seluruh dashboard.
+// Tidak mengubah skema/tabel apa pun — hanya SELECT kolom yang sudah ada.
+export async function getMyAttendanceStatus(): Promise<
+  { event: string; verifiedAt: Date | null }[]
+> {
+  const id = await getParticipantId()
+  if (!id) return []
+  const rows = await db
+    .select({ event: attendance.event, verifiedAt: attendance.verifiedAt })
+    .from(attendance)
+    .where(eq(attendance.participantId, id))
+  return rows.map((r) => ({ event: r.event, verifiedAt: r.verifiedAt }))
+}
+
 export async function touchParticipant() {
   const id = await getParticipantId()
   if (!id) return

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import {
   Moon,
@@ -12,10 +12,13 @@ import {
   Loader2,
   Sparkles,
   BellRing,
+  Volume2,
+  VolumeX,
 } from "lucide-react"
 import { GlassCard, TextField, GradientButton, GhostButton } from "./ui-kit"
 import { useTheme } from "./theme-provider"
 import { updateParticipantName, changePasswordSelf } from "@/app/actions/participant"
+import { isSoundOn, setSoundOn, playSuccess, playClick } from "@/lib/sound"
 
 /**
  * Panel Pengaturan yang dipakai peserta & panitia dengan tampilan sama:
@@ -31,6 +34,10 @@ export function SettingsPanel({
   const { theme, toggleTheme } = useTheme()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+
+  // Preferensi suara notifikasi (per perangkat, localStorage)
+  const [soundOn, setSound] = useState(true)
+  useEffect(() => setSound(isSoundOn()), [])
 
   // Ganti nama
   const [ newName, setNewName ] = useState("")
@@ -189,19 +196,52 @@ export function SettingsPanel({
         </GlassCard>
       )}
 
-      {/* Info notifikasi / ide tambahan */}
+      {/* Suara notifikasi — toggle aktif + tombol tes (perangkat ini saja) */}
       <GlassCard className="animate-rise-4">
-        <div className="flex items-start gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-[var(--gold)]">
-            <BellRing className="h-5 w-5" />
-          </span>
-          <div className="min-w-0">
-            <p className="font-semibold text-foreground">Notifikasi Suara</p>
-            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-              {role === "panitia"
-                ? "Scanner sudah dilengkapi suara 'beep' + animasi centang besar saat scan berhasil — pastikan volume perangkat menyala di hari-H."
-                : "Saat presensimu berhasil discan, status di halaman Presensi langsung berubah menjadi 'Hadir' tanpa perlu refresh."}
-            </p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-[var(--gold)]">
+              {soundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+            </span>
+            <div className="min-w-0">
+              <p className="font-semibold text-foreground">Suara Notifikasi</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                {role === "panitia"
+                  ? "Bunyi saat scan berhasil / sudah pernah discan / kode salah. Pastikan volume menyala di hari-H."
+                  : "Bunyi meriah saat presensimu berhasil discan panitia, meski kamu sedang membuka halaman lain di tab ini."}
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <GhostButton
+              onClick={() => playSuccess()}
+              title="Tes suara"
+              className="!px-3 !py-2 text-xs"
+            >
+              <BellRing className="h-4 w-4" /> Tes
+            </GhostButton>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={soundOn}
+              aria-label="Suara notifikasi"
+              onClick={() => {
+                const next = !soundOn
+                setSound(next)
+                if (next) playClick()
+              }}
+              className={
+                "relative h-7 w-12 rounded-full transition-colors duration-300 " +
+                (soundOn ? "bg-emerald-400/80" : "bg-white/15")
+              }
+            >
+              <span
+                className={
+                  "absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all duration-300 " +
+                  (soundOn ? "left-6" : "left-1")
+                }
+              />
+            </button>
           </div>
         </div>
       </GlassCard>

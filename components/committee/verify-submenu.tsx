@@ -6,6 +6,7 @@ import { Camera, CameraOff, ScanLine, CheckCircle2, XCircle, Info } from "lucide
 import { QrScanner } from "@/components/qr-scanner"
 import { GradientButton } from "@/components/ui-kit"
 import { verifyCode } from "@/app/actions/committee"
+import { playSuccess, playAlready, playError } from "@/lib/sound"
 
 type Result =
   | { kind: "success"; nama: string; kelas: string; nomor: number }
@@ -22,27 +23,9 @@ function SuccessOverlay({ result, onDone }: { result: SuccessResult; onDone: () 
     return () => window.clearTimeout(timer.current)
   }, [onDone])
 
-  // Bunyikan beep singkat (jika browser mengizinkan) agar lebih terdengar di hari-H
+  // Bunyikan melodi sukses (Web Audio, bisa dimatikan di Pengaturan)
   useEffect(() => {
-    try {
-      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-      if (!Ctx) return
-      const ctx = new Ctx()
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
-      osc.type = "sine"
-      osc.frequency.value = 880
-      gain.gain.setValueAtTime(0.18, ctx.currentTime)
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45)
-      osc.connect(gain).connect(ctx.destination)
-      osc.start()
-      osc.stop(ctx.currentTime + 0.5)
-      return () => {
-        ctx.close().catch(() => {})
-      }
-    } catch {
-      /* audio opsional */
-    }
+    playSuccess()
   }, [])
 
   return (
@@ -122,6 +105,7 @@ export function VerifySubmenu({ event }: { event: string }) {
         const res = await verifyCode(event, code)
         if (!res.ok) {
           setResult({ kind: "error", message: res.error ?? "Gagal memverifikasi." })
+          playError()
           return
         }
         setResult({
@@ -130,8 +114,12 @@ export function VerifySubmenu({ event }: { event: string }) {
           kelas: res.kelas!,
           nomor: res.nomor!,
         })
-        // Notifikasi besar HANYA untuk presensi baru yang berhasil
-        if (!res.already) setShowOverlay(true)
+        // Notifikasi besar + melodi HANYA untuk presensi baru yang berhasil
+        if (!res.already) {
+          setShowOverlay(true)
+        } else {
+          playAlready()
+        }
         setManual("")
         router.refresh()
       })
