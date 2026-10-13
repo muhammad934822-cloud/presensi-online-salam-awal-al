@@ -135,6 +135,43 @@ export async function logoutParticipant() {
   revalidatePath("/")
 }
 
+// Ganti nama peserta yang sedang login (kolom `nama` yang sudah ada).
+export async function updateParticipantName(formData: FormData): Promise<ActionResult> {
+  const id = await getParticipantId()
+  if (!id) return { ok: false, error: "Sesi tidak valid." }
+
+  const nama = String(formData.get("nama") ?? "").trim().toUpperCase()
+  if (nama.length < 3) return { ok: false, error: "Nama baru minimal 3 karakter." }
+  if (nama.length > 60) return { ok: false, error: "Nama terlalu panjang." }
+
+  await db.update(participants).set({ nama }).where(eq(participants.id, id))
+  revalidatePath("/")
+  return { ok: true }
+}
+
+// Ganti password peserta yang sedang login (kolom `password_hash` yang sudah ada).
+export async function changePasswordSelf(formData: FormData): Promise<ActionResult> {
+  const id = await getParticipantId()
+  if (!id) return { ok: false, error: "Sesi tidak valid." }
+
+  const currentPassword = String(formData.get("currentPassword") ?? "")
+  const newPassword = String(formData.get("newPassword") ?? "")
+
+  if (newPassword.length < 6) return { ok: false, error: "Password baru minimal 6 karakter." }
+
+  const [p] = await db.select().from(participants).where(eq(participants.id, id)).limit(1)
+  if (!p) return { ok: false, error: "Akun tidak ditemukan." }
+  if (!verifyPassword(currentPassword, p.passwordHash))
+    return { ok: false, error: "Password lama salah." }
+
+  await db
+    .update(participants)
+    .set({ passwordHash: hashPassword(newPassword), lastActiveAt: new Date() })
+    .where(eq(participants.id, id))
+  revalidatePath("/")
+  return { ok: true }
+}
+
 export async function touchParticipant() {
   const id = await getParticipantId()
   if (!id) return

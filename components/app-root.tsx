@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { GraduationCap, ShieldCheck, ChevronRight, QrCode, Zap } from "lucide-react"
+import { GraduationCap, ShieldCheck, ChevronRight, QrCode, Zap, LayoutDashboard } from "lucide-react"
 import { BrandHeader } from "./brand-header"
 import { PesertaAuth } from "./peserta-auth"
 import { PanitiaAuth } from "./panitia-auth"
@@ -22,24 +22,63 @@ type Props = {
 
 export function AppRoot({ participant, codes, committee, recaps, accounts }: Props) {
   const [choice, setChoice] = useState<"none" | "peserta" | "panitia">("none")
+  // Setelah login: tampilkan halaman utama dulu; dashboard dibuka lewat tombol.
+  const [openDash, setOpenDash] = useState(false)
 
-  if (participant && codes) {
+  // Sudah login tapi belum membuka dashboard -> tampilkan HALAMAN UTAMA sambutan dulu.
+  const loggedIn = Boolean(participant && codes) || Boolean(committee && recaps && accounts)
+  if (loggedIn && !openDash) {
+    const isPanitia = Boolean(committee && recaps && accounts)
+    return (
+      <div className="mx-auto flex w-full max-w-2xl flex-col justify-center gap-8 text-center">
+        <BrandHeader />
+        <div className="animate-rise-2 mx-auto max-w-md">
+          <span className="animate-float mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-[linear-gradient(135deg,var(--gold),var(--purple)_60%,var(--blue))] text-white shadow-xl shadow-[var(--purple)]/30">
+            {isPanitia ? <ShieldCheck className="h-10 w-10" /> : <GraduationCap className="h-10 w-10" />}
+          </span>
+          <h2 className="font-serif text-2xl font-bold text-foreground">
+            {isPanitia ? "Selamat datang, Panitia! 👋" : `Halo, ${(participant?.nama ?? "").split(" ")[0] || "Peserta"}! 👋`}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            {isPanitia
+              ? "Kamu sudah masuk sebagai panitia. Siap memverifikasi kehadiran Salam Awal Al Uswah hari ini?"
+              : "Akun presensimu aktif. Buka dashboard untuk menampilkan QR, melihat progres kehadiran, dan mengatur akunmu."}
+          </p>
+        </div>
+        <button
+          onClick={() => setOpenDash(true)}
+          className="lift sheen-host animate-rise-3 group mx-auto inline-flex min-h-14 items-center gap-2 rounded-2xl bg-[linear-gradient(100deg,var(--gold),var(--purple)_55%,var(--blue))] bg-[length:200%_100%] px-8 py-4 text-base font-bold text-white shadow-lg shadow-[var(--purple)]/40 transition-all duration-300 hover:bg-right hover:shadow-xl active:scale-[0.98]"
+        >
+          <LayoutDashboard className="h-5 w-5 transition-transform duration-300 group-hover:rotate-6" />
+          Buka Dashboard
+          <ChevronRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+        </button>
+        <p className="animate-rise-4 text-xs text-muted-foreground">
+          Tip: menu lengkap tersedia di sidebar kiri setelah dashboard dibuka.
+        </p>
+      </div>
+    )
+  }
+
+  if (participant && codes && openDash) {
     return (
       <ParticipantHome
         nama={participant.nama}
         kelas={participant.kelas}
         nomorPresensi={participant.nomorPresensi}
         codes={codes}
+        onExit={() => setOpenDash(false)}
       />
     )
   }
 
-  if (committee && recaps && accounts) {
-    return <CommitteeHome recaps={recaps} accounts={accounts} />
+  if (committee && recaps && accounts && openDash) {
+    return <CommitteeHome recaps={recaps} accounts={accounts} onExit={() => setOpenDash(false)} />
   }
 
   if (choice === "peserta") return <PesertaAuth onBack={() => setChoice("none")} />
   if (choice === "panitia") return <PanitiaAuth onBack={() => setChoice("none")} />
+
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col justify-center gap-10">

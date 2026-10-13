@@ -1,0 +1,226 @@
+"use client"
+
+import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import {
+  Moon,
+  Sun,
+  UserRoundPen,
+  KeyRound,
+  LogOut,
+  CheckCircle2,
+  Loader2,
+  Sparkles,
+  BellRing,
+} from "lucide-react"
+import { GlassCard, TextField, GradientButton, GhostButton } from "./ui-kit"
+import { useTheme } from "./theme-provider"
+import { updateParticipantName, changePasswordSelf } from "@/app/actions/participant"
+
+/**
+ * Panel Pengaturan yang dipakai peserta & panitia dengan tampilan sama:
+ * tema (gelap/terang), ganti nama (khusus peserta), ganti password, keluar.
+ */
+export function SettingsPanel({
+  role,
+  nama,
+}: {
+  role: "peserta" | "panitia"
+  nama?: string
+}) {
+  const { theme, toggleTheme } = useTheme()
+  const router = useRouter()
+  const [pending, startTransition] = useTransition()
+
+  // Ganti nama
+  const [ newName, setNewName ] = useState("")
+  const [nameMsg, setNameMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  // Ganti password
+  const [oldPass, setOldPass] = useState("")
+  const [newPass, setNewPass] = useState("")
+  const [passMsg, setPassMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  function saveName() {
+    if (!newName.trim()) return
+    setNameMsg(null)
+    startTransition(async () => {
+      const fd = new FormData()
+      fd.set("nama", newName)
+      const res = await updateParticipantName(fd)
+      setNameMsg(res.ok ? { ok: true, text: "Nama berhasil diganti ✨" } : { ok: false, text: res.error ?? "Gagal." })
+      if (res.ok) {
+        setNewName("")
+        router.refresh()
+      }
+    })
+  }
+
+  function savePassword() {
+    setPassMsg(null)
+    if (role === "panitia") {
+      setPassMsg({ ok: false, text: "Password panitia diatur lewat file konfigurasi." })
+      return
+    }
+    startTransition(async () => {
+      const fd = new FormData()
+      fd.set("currentPassword", oldPass)
+      fd.set("newPassword", newPass)
+      const res = await changePasswordSelf(fd)
+      setPassMsg(res.ok ? { ok: true, text: "Password berhasil diganti 🔒" } : { ok: false, text: res.error ?? "Gagal." })
+      if (res.ok) {
+        setOldPass("")
+        setNewPass("")
+      }
+    })
+  }
+
+  return (
+    <div className="grid gap-4">
+      {/* Tema */}
+      <GlassCard className="animate-rise-1">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--purple),var(--blue))] text-white shadow-lg shadow-[var(--purple)]/30">
+              {theme === "dark" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+            </span>
+            <div>
+              <p className="font-semibold text-foreground">Tema Aplikasi</p>
+              <p className="text-xs text-muted-foreground">
+                Saat ini: <b className="capitalize">{theme === "dark" ? "Gelap" : "Terang"}</b> — tersimpan otomatis di perangkatmu
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={toggleTheme}
+            className={
+              "relative h-9 w-[4.5rem] shrink-0 rounded-full border transition-all duration-500 " +
+              (theme === "dark"
+                ? "border-white/20 bg-[oklch(0.2_0.03_255)]"
+                : "border-black/10 bg-sky-200")
+            }
+            aria-label="Ganti tema"
+          >
+            <span
+              className={
+                "absolute top-1 flex h-7 w-7 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--gold),#e8c87a)] shadow-md transition-all duration-500 " +
+                (theme === "dark" ? "left-1" : "left-[calc(100%-2rem)]")
+              }
+            >
+              {theme === "dark" ? <Moon className="h-3.5 w-3.5 text-[oklch(0.2_0.03_255)]" /> : <Sun className="h-3.5 w-3.5 text-[oklch(0.2_0.03_255)]" />}
+            </span>
+          </button>
+        </div>
+      </GlassCard>
+
+      {/* Ganti nama (peserta) */}
+      {role === "peserta" && nama !== undefined && (
+        <GlassCard className="animate-rise-2">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--gold),#e8c87a)] text-[oklch(0.2_0.03_255)] shadow-lg shadow-[var(--gold)]/30">
+              <UserRoundPen className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-semibold text-foreground">Ganti Nama</p>
+              <p className="text-xs text-muted-foreground">Nama saat ini: {nama || "—"}</p>
+            </div>
+          </div>
+          <div className="grid gap-3">
+            <TextField
+              label="Nama baru"
+              placeholder="Tulis nama lengkap baru"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+            />
+            {nameMsg && (
+              <p className={"flex items-center gap-1.5 text-sm " + (nameMsg.ok ? "text-emerald-300" : "text-destructive")}>
+                {nameMsg.ok && <CheckCircle2 className="h-4 w-4" />} {nameMsg.text}
+              </p>
+            )}
+            <GradientButton onClick={saveName} disabled={pending || !newName.trim()}>
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Simpan Nama
+            </GradientButton>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Ganti password */}
+      <GlassCard className="animate-rise-3">
+        <div className="mb-3 flex items-center gap-3">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--blue),#8fb8ef)] text-[oklch(0.2_0.03_255)] shadow-lg shadow-[var(--blue)]/30">
+            <KeyRound className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="font-semibold text-foreground">Ganti Password</p>
+            <p className="text-xs text-muted-foreground">
+              {role === "peserta" ? "Password lama tidak akan bisa dipakai lagi" : "Khusus peserta — panitia memakai password tetap"}
+            </p>
+          </div>
+        </div>
+        {role === "peserta" && (
+          <div className="grid gap-3">
+            <TextField
+              label="Password lama"
+              type="password"
+              placeholder="••••••••"
+              value={oldPass}
+              onChange={(e) => setOldPass(e.target.value)}
+            />
+            <TextField
+              label="Password baru"
+              type="password"
+              placeholder="Minimal 6 karakter"
+              value={newPass}
+              onChange={(e) => setNewPass(e.target.value)}
+            />
+            {passMsg && (
+              <p className={"flex items-center gap-1.5 text-sm " + (passMsg.ok ? "text-emerald-300" : "text-destructive")}>
+                {passMsg.ok && <CheckCircle2 className="h-4 w-4" />} {passMsg.text}
+              </p>
+            )}
+            <GradientButton onClick={savePassword} disabled={pending || !oldPass || newPass.length < 6}>
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Perbarui Password
+            </GradientButton>
+          </div>
+        )}
+      </GlassCard>
+
+      {/* Info notifikasi / ide tambahan */}
+      <GlassCard className="animate-rise-4">
+        <div className="flex items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-[var(--gold)]">
+            <BellRing className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-semibold text-foreground">Notifikasi Suara</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+              {role === "panitia"
+                ? "Scanner sudah dilengkapi suara 'beep' + animasi centang besar saat scan berhasil — pastikan volume perangkat menyala di hari-H."
+                : "Saat presensimu berhasil discan, status di halaman Presensi langsung berubah menjadi 'Hadir ✓' tanpa perlu refresh."}
+            </p>
+          </div>
+        </div>
+      </GlassCard>
+
+      {/* Keluar */}
+      <GhostButton
+        onClick={() =>
+          startTransition(async () => {
+            if (role === "peserta") {
+              const { logoutParticipant } = await import("@/app/actions/participant")
+              await logoutParticipant()
+            } else {
+              const { logoutCommittee } = await import("@/app/actions/committee")
+              await logoutCommittee()
+            }
+            router.refresh()
+          })
+        }
+        disabled={pending}
+        className="border-destructive/40 text-destructive hover:border-destructive/70 hover:bg-destructive/10"
+      >
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />} Keluar dari akun
+      </GhostButton>
+    </div>
+  )
+}

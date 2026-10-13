@@ -3,6 +3,7 @@
 import { db } from "@/lib/db"
 import { participants, attendance } from "@/lib/db/schema"
 import { and, eq } from "drizzle-orm"
+import { hashPassword } from "@/lib/crypto"
 import {
   createCommitteeSession,
   destroyCommitteeSession,
@@ -82,6 +83,24 @@ export async function deleteParticipant(participantId: string): Promise<ActionRe
   if (!(await isCommittee())) return { ok: false, error: "Tidak diizinkan." }
   await db.delete(attendance).where(eq(attendance.participantId, participantId))
   await db.delete(participants).where(eq(participants.id, participantId))
+  revalidatePath("/")
+  return { ok: true }
+}
+
+// Panitia mereset password peserta menjadi "12345678" (kolom `password_hash` yang sudah ada).
+export async function resetParticipantPassword(participantId: string): Promise<ActionResult> {
+  if (!(await isCommittee())) return { ok: false, error: "Tidak diizinkan." }
+  const [p] = await db
+    .select({ id: participants.id })
+    .from(participants)
+    .where(eq(participants.id, participantId))
+    .limit(1)
+  if (!p) return { ok: false, error: "Peserta tidak ditemukan." }
+
+  await db
+    .update(participants)
+    .set({ passwordHash: hashPassword("12345678") })
+    .where(eq(participants.id, participantId))
   revalidatePath("/")
   return { ok: true }
 }
