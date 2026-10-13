@@ -149,22 +149,29 @@ export async function updateParticipantName(formData: FormData): Promise<ActionR
   return { ok: true }
 }
 
-// Ganti password peserta yang sedang login — diverifikasi dengan KODE UNIK akun
-// (kolom `kode_unik` & `password_hash` yang sudah ada, skema DB tidak berubah).
-export async function changePasswordSelfWithKode(formData: FormData): Promise<ActionResult> {
+// Ganti password peserta yang sedang login — diverifikasi dengan PASSWORD LAMA
+// ATAU KODE UNIK akun (salah satu cukup). Hanya memakai kolom `password_hash`
+// & `kode_unik` yang sudah ada — skema DB tidak berubah.
+export async function changePasswordSelf(formData: FormData): Promise<ActionResult> {
   const id = await getParticipantId()
   if (!id) return { ok: false, error: "Sesi tidak valid." }
 
+  const oldPassword = String(formData.get("oldPassword") ?? "")
   const kodeUnik = String(formData.get("kodeUnik") ?? "").trim()
   const newPassword = String(formData.get("newPassword") ?? "")
 
-  if (kodeUnik.length < 4) return { ok: false, error: "Kode unik minimal 4 karakter." }
+  if (!oldPassword && !kodeUnik)
+    return { ok: false, error: "Isi password lama atau kode unik untuk verifikasi." }
   if (newPassword.length < 6) return { ok: false, error: "Password baru minimal 6 karakter." }
 
   const [p] = await db.select().from(participants).where(eq(participants.id, id)).limit(1)
   if (!p) return { ok: false, error: "Akun tidak ditemukan." }
-  if (p.kodeUnik !== kodeUnik)
-    return { ok: false, error: "Kode unik salah. Password tidak diganti." }
+
+  // Verifikasi: cocokkan password lama (hash) ATAU kode unik (plaintext existing column).
+  const passLamaCocok = oldPassword ? verifyPassword(oldPassword, p.passwordHash) : false
+  const kodeCocok = kodeUnik ? p.kodeUnik === kodeUnik : false
+  if (!passLamaCocok && !kodeCocok)
+    return { ok: false, error: "Verifikasi gagal — password lama & kode unik tidak cocok. Password tidak diganti." }
 
   await db
     .update(participants)
