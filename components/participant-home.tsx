@@ -54,7 +54,7 @@ export function ParticipantHome({
   const [selected, setSelected] = useState<EventKey | null>(null)
   const router = useRouter()
 
-  /* Sinkronisasi dashboard: refresh ringan tiap 15 detik + saat tab kembali
+  /* Sinkronisasi dashboard: refresh ringan tiap 3 detik + saat tab kembali
      fokus, agar badge Hadir/progress ikut ter-update. Deteksi "baru saja
      discan" untuk selebrasi + suara ditangani <AttendanceCelebration/>
      (polling query baca kecil terpisah) — tidak ada penulisan DB. */
@@ -63,7 +63,7 @@ export function ParticipantHome({
     const tick = () => {
       if (alive && document.visibilityState === "visible") router.refresh()
     }
-    const id = window.setInterval(tick, 15000)
+    const id = window.setInterval(tick, 3000)
     const onFocus = () => tick()
     window.addEventListener("focus", onFocus)
     document.addEventListener("visibilitychange", onFocus)

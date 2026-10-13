@@ -11,7 +11,7 @@ import { EVENT_LABELS, type EventKey } from "@/lib/db/schema"
    attendance-celebration.tsx — Detektor presensi realtime utk PESERTA.
 
    Cara kerja (aman & ringan):
-   1. Polling query baca kecil `getMyAttendanceStatus()` tiap 5 detik
+   1. Polling query baca kecil `getMyAttendanceStatus()` tiap 3 detik
       (hanya saat tab terlihat) + langsung cek saat tab kembali fokus.
    2. Jika ada kegiatan yang berubah BELUM → HADIR sejak render awal
       server, tampilkan kartu selebrasi melayang di bawah layar
@@ -60,7 +60,7 @@ export function AttendanceCelebration({ initial }: { initial: Status }) {
       }
     }
 
-    const id = window.setInterval(check, 5000)
+    const id = window.setInterval(check, 3000)
     const onFocus = () => void check()
     window.addEventListener("focus", onFocus)
     document.addEventListener("visibilitychange", onFocus)

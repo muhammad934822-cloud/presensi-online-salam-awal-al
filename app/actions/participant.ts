@@ -110,8 +110,8 @@ export async function resetPasswordWithKode(formData: FormData): Promise<ActionR
   if (!validKelas(kelas)) return { ok: false, error: "Kelas tidak valid." }
   if (!Number.isInteger(nomorPresensi))
     return { ok: false, error: "Nomor presensi tidak valid." }
-  if (newPassword.length < 1)
-    return { ok: false, error: "Password baru wajib diisi." }
+  if (newPassword.length < 6)
+    return { ok: false, error: "Password baru minimal 6 karakter." }
 
   const [p] = await db
     .select()
