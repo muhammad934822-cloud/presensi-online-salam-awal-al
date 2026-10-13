@@ -23,12 +23,16 @@ export function LiveClock({ className = "" }: { className?: string }) {
 
   const time = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
   const date = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "short" })
+  // Label zona waktu mengikuti timezone browser pengunjung (bukan hardcode WIB),
+  // jadi tetap akurat untuk panitia/peserta di mana pun.
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "WIB"
+  const tzShort = tz.includes("Makassar") || tz.includes("Balikpapan") ? "WITA" : tz.includes("Jayapura") ? "WIT" : tz.includes("Jakarta") ? "WIB" : tz.split("/").pop() || tz
 
   return (
     <span className={"inline-flex items-center gap-2 rounded-xl border border-[var(--line)] bg-white/[0.06] px-3 py-1.5 backdrop-blur-sm " + className}>
       <Clock className="h-3.5 w-3.5 shrink-0 text-[var(--gold)]" aria-hidden="true" />
       <span className="whitespace-nowrap text-xs font-semibold tabular-nums tracking-tight text-foreground">{time}</span>
-      <span className="hidden whitespace-nowrap text-[11px] text-muted-foreground sm:inline">WIB · {date}</span>
+      <span className="hidden whitespace-nowrap text-[11px] text-muted-foreground sm:inline">{tzShort} · {date}</span>
     </span>
   )
 }
