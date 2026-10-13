@@ -36,21 +36,27 @@ export async function getRecentActivity(limit = 20): Promise<ActivityRow[]> {
   }
 }
 
-export type ClassStat = { kelas: string; total: number; hadir: number }
+export type ClassStat = { event: EventKey; kelas: string; total: number; hadir: number }
 
-/** Statistik kehadiran per kelas dari seluruh baris attendance. */
+/** Statistik kehadiran per kelas, dikelompokkan per kegiatan. */
 export async function getClassStats(): Promise<ClassStat[]> {
   const rows = await db
     .select({
+      event: attendance.event,
       kelas: participants.kelas,
       total: sql<number>`count(*)`,
       hadir: sql<number>`count(*) filter (where ${attendance.verifiedAt} is not null)`,
     })
     .from(attendance)
     .innerJoin(participants, eq(attendance.participantId, participants.id))
-    .groupBy(participants.kelas)
-    .orderBy(asc(participants.kelas))
-  return rows.map((r) => ({ kelas: r.kelas, total: Number(r.total), hadir: Number(r.hadir) }))
+    .groupBy(attendance.event, participants.kelas)
+    .orderBy(asc(attendance.event), asc(participants.kelas))
+  return rows.map((r) => ({
+    event: r.event as EventKey,
+    kelas: r.kelas,
+    total: Number(r.total),
+    hadir: Number(r.hadir),
+  }))
 }
 
 export type RecapRow = {

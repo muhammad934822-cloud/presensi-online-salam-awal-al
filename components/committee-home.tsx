@@ -144,28 +144,45 @@ export function CommitteeHome({
         <b>Daftar Peserta</b> untuk mengelola akun & mereset password peserta.
       </p>
 
-      {/* Statistik kehadiran per kelas */}
+      {/* Statistik kehadiran per kelas — dikelompokkan per kegiatan */}
       {classStats && classStats.length > 0 && (
         <GlassCard className="animate-rise-3 mt-5">
-          <div className="px-4 py-4">
-            <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+          <div className="px-4 py-3.5">
+            <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <Users className="h-4 w-4 text-[var(--blue)]" /> Kehadiran per Kelas
             </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-              {classStats.map((c) => {
-                const pct = c.total ? Math.round((c.hadir / c.total) * 100) : 0
+            <div className="mt-2 grid gap-x-5 gap-y-2 md:grid-cols-3">
+              {EVENTS.map((ev) => {
+                const list = classStats.filter((c) => c.event === ev)
+                if (list.length === 0) return null
+                const Icon = ICONS[ev]
+                const totalHadir = list.reduce((n, c) => n + c.hadir, 0)
+                const totalAll = list.reduce((n, c) => n + c.total, 0)
                 return (
-                  <div key={c.kelas} className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5 transition hover:border-[var(--blue)]/40">
-                    <p className="truncate text-xs font-semibold text-foreground">{c.kelas}</p>
-                    <p className="font-serif text-lg font-bold tabular-nums text-foreground">
-                      {c.hadir}<span className="text-xs text-muted-foreground">/{c.total}</span>
+                  <div key={ev}>
+                    <p className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <Icon className="h-3.5 w-3.5 text-[var(--gold)]" /> {EVENT_LABELS[ev]}
+                      <span className="ml-auto normal-case tracking-normal tabular-nums">
+                        {totalHadir}/{totalAll}
+                      </span>
                     </p>
-                    <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
-                      <div
-                        className="h-full rounded-full bg-[linear-gradient(90deg,var(--blue),var(--purple))] transition-all duration-700"
-                        style={{ width: `${Math.max(pct, c.hadir > 0 ? 6 : 0)}%` }}
-                      />
-                    </div>
+                    <ul className="space-y-1">
+                      {list.map((c) => {
+                        const pct = c.total ? Math.round((c.hadir / c.total) * 100) : 0
+                        return (
+                          <li key={ev + c.kelas} className="flex items-center gap-2 text-xs">
+                            <span className="w-16 shrink-0 truncate font-medium text-foreground/85">{c.kelas}</span>
+                            <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
+                              <span
+                                className="block h-full rounded-full bg-[linear-gradient(90deg,var(--blue),var(--purple))] transition-all duration-700"
+                                style={{ width: `${Math.max(pct, c.hadir > 0 ? 6 : 0)}%` }}
+                              />
+                            </span>
+                            <span className="shrink-0 tabular-nums text-muted-foreground">{c.hadir}/{c.total}</span>
+                          </li>
+                        )
+                      })}
+                    </ul>
                   </div>
                 )
               })}
