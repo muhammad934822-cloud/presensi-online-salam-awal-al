@@ -62,8 +62,7 @@ export function AccountsSection({ accounts }: { accounts: AccountRow[] }) {
 
       <p className="mb-3 px-1 text-xs leading-relaxed text-muted-foreground">
         <RotateCcw className="mr-1 inline h-3.5 w-3.5 text-[var(--blue)]" /> Tombol reset mengganti password peserta
-        menjadi <b className="text-foreground">12345678</b> — panitia wajib memasukkan <b className="text-foreground">kode unik</b> peserta
-        (kode yang sama saat ia mendaftar) sebagai konfirmasi. Hapus hanya akun yang bermasalah — data presensinya ikut terhapus.
+        menjadi <b className="text-foreground">12345678</b>. Peserta disarankan menggantinya lagi setelah login. Hapus hanya akun yang bermasalah — data presensinya ikut terhapus.
       </p>
 
       {filtered.length === 0 ? (

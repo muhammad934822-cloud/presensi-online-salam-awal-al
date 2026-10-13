@@ -92,7 +92,7 @@ export function CommitteeHome({
 
       <p className="mt-4 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-3 text-center text-xs leading-relaxed text-muted-foreground">
         <Lightbulb className="mr-1 inline h-3.5 w-3.5 -translate-y-px text-[var(--gold)]" aria-hidden="true" /> Buka menu <b>Presensi</b> di sidebar untuk scan QR & rekap per kegiatan, atau{" "}
-        <b>Daftar Peserta</b> untuk mengelola akun & mereset password peserta (butuh kode unik).
+        <b>Daftar Peserta</b> untuk mengelola akun & mereset password peserta.
       </p>
     </div>
   )
