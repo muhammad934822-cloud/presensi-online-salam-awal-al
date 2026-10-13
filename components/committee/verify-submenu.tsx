@@ -69,6 +69,20 @@ function SuccessOverlay({ result, onDone }: { result: SuccessResult; onDone: () 
             />
           </svg>
         </div>
+        {/* Hujan confetti di seluruh layar */}
+        <div aria-hidden className="confetti-rain pointer-events-none absolute inset-0 overflow-hidden">
+          {Array.from({ length: 24 }).map((_, i) => (
+            <span
+              key={i}
+              style={{
+                left: `${(i * 4.1 + 2) % 100}%`,
+                background: ["#fbbf24", "#34d399", "#60a5fa", "#c084fc", "#fb7185", "#ffffff"][i % 6],
+                animationDelay: `${(i % 8) * 0.18}s`,
+                animationDuration: "2.2s",
+              }}
+            />
+          ))}
+        </div>
         <p className="animate-pop mt-6 text-4xl font-extrabold tracking-tight text-white drop-shadow sm:text-5xl">
           PRESENSI BERHASIL
         </p>
@@ -76,6 +90,10 @@ function SuccessOverlay({ result, onDone }: { result: SuccessResult; onDone: () 
           {result.nama}
         </p>
         <p className="text-base text-white/85 sm:text-lg">{result.kelas} &middot; No. {result.nomor}</p>
+        <div className="animate-banner-pop mx-auto mt-5 flex items-center gap-2 rounded-2xl border-2 border-white/70 bg-white/15 px-5 py-2.5 backdrop-blur" style={{ animationDelay: "0.25s" }}>
+          <CheckCircle2 className="h-7 w-7 text-white" />
+          <span className="text-lg font-bold text-white">Hadir ✓ Tercatat di sistem</span>
+        </div>
         <p className="mt-4 text-xs uppercase tracking-widest text-white/70">Ketuk untuk menutup</p>
       </div>
     </div>

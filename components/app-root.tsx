@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { GraduationCap, ShieldCheck, ChevronRight, QrCode, Zap, LayoutDashboard } from "lucide-react"
+import { GraduationCap, ShieldCheck, ChevronRight, QrCode, Zap, LayoutDashboard, Sparkles, Moon as MoonIcon, UtensilsCrossed } from "lucide-react"
 import { BrandHeader } from "./brand-header"
 import { PesertaAuth } from "./peserta-auth"
 import { PanitiaAuth } from "./panitia-auth"
@@ -83,11 +83,33 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col justify-center gap-10">
       <div className="text-center sm:text-left">
+        {/* Badge meriah */}
+        <span className="animate-rise inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-xs font-semibold text-foreground/90 backdrop-blur">
+          <Sparkles className="h-3.5 w-3.5 animate-float text-[var(--gold)]" aria-hidden="true" />
+          🕌 Salam Awal Al Uswah — Presensi Digital
+        </span>
         <BrandHeader />
         <p className="animate-rise-1 mt-5 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
-          Sistem presensi digital untuk kegiatan <span className="font-semibold text-foreground/90">Salam Awal Al Uswah</span>.
+          Sistem presensi digital untuk kegiatan <span className="text-rainbow-shine font-bold">Salam Awal Al Uswah</span>.
           Masuk sebagai peserta untuk menampilkan kode QR presensi, atau sebagai panitia untuk memverifikasi dan merekap kehadiran.
         </p>
+
+        {/* Marquee tiga kegiatan */}
+        <div className="animate-rise-2 mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
+          {[
+            { icon: GraduationCap, label: "Studium Generale", color: "var(--gold)" },
+            { icon: MoonIcon, label: "Mabit", color: "var(--purple)" },
+            { icon: UtensilsCrossed, label: "Konsumsi", color: "var(--blue)" },
+          ].map((e, i) => (
+            <span
+              key={e.label}
+              className={`animate-float${i === 1 ? "-delayed" : ""} inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-foreground/85 backdrop-blur`}
+            >
+              <e.icon className="h-3.5 w-3.5" style={{ color: e.color }} aria-hidden="true" />
+              {e.label}
+            </span>
+          ))}
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -136,14 +158,22 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
           { icon: QrCode, label: "Scan QR", desc: "Verifikasi cepat" },
           { icon: Zap, label: "Real-time", desc: "Rekap langsung" },
           { icon: ShieldCheck, label: "Aman", desc: "Kode unik 16 digit" },
-        ].map((f) => (
-          <div key={f.label} className="rounded-2xl border border-white/8 bg-white/[0.04] px-2 py-3 backdrop-blur-sm">
-            <f.icon className="mx-auto mb-1.5 h-4 w-4 text-[var(--gold)]" aria-hidden="true" />
+        ].map((f, i) => (
+          <div
+            key={f.label}
+            className={`lift group rounded-2xl border border-white/8 bg-white/[0.04] px-2 py-3 backdrop-blur-sm transition-colors hover:border-[var(--gold)]/40 ${i === 1 ? "animate-float-delayed" : ""}`}
+          >
+            <f.icon className="mx-auto mb-1.5 h-4 w-4 text-[var(--gold)] transition-transform duration-300 group-hover:scale-125" aria-hidden="true" />
             <p className="text-xs font-semibold text-foreground">{f.label}</p>
             <p className="text-[11px] text-muted-foreground">{f.desc}</p>
           </div>
         ))}
       </div>
+
+      {/* Footer meriah */}
+      <p className="animate-rise-4 text-center text-[11px] text-muted-foreground/70">
+        ✨ Dibuat untuk kelancaran Salam Awal Al Uswah — presensi cepat, rekap rapi, data aman.
+      </p>
     </div>
   )
 }

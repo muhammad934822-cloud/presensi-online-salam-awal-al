@@ -380,6 +380,55 @@
 }
 .pulse-dot { animation: dot-pulse 2s ease-in-out infinite; }
 
+/* Rainbow sweep band (latar rainbow pelan) */
+@keyframes rainbow-drift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.rainbow-sweep {
+  background: linear-gradient(90deg,
+    oklch(0.72_0.19_30), oklch(0.8_0.16_85), oklch(0.75_0.17_150),
+    oklch(0.68_0.18_210), oklch(0.62_0.2_290), oklch(0.68_0.19_340),
+    oklch(0.72_0.19_30));
+  background-size: 300% 100%;
+  filter: blur(60px);
+  animation: rainbow-drift 16s ease-in-out infinite;
+}
+
+/* Kartu sukses peserta: bingkai gradient berputar halus */
+@keyframes hue-spin {
+  to { transform: rotate(360deg); }
+}
+.success-hue-ring {
+  background: conic-gradient(from 0deg,
+    oklch(0.75_0.17_150), oklch(0.8_0.16_85), oklch(0.72_0.19_30),
+    oklch(0.68_0.19_340), oklch(0.62_0.2_290), oklch(0.68_0.18_210),
+    oklch(0.75_0.17_150));
+  animation: hue-spin 6s linear infinite;
+}
+
+/* Confetti versi peserta (hujan kecil di dalam kartu sukses) */
+.confetti-rain > span {
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation: confetti-fall 1.8s ease-in forwards;
+}
+
+/* Shimmer teks pelangi untuk headline halaman utama */
+.text-rainbow-shine {
+  background: linear-gradient(90deg,
+    var(--gold), #ff7ab6, var(--purple), var(--blue), #4ade80, var(--gold));
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rainbow-drift 8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-slide-fade, .gradient-slide, .pulse-dot { animation: none !important; }
 }
@@ -389,7 +438,8 @@
   .animate-float, .animate-float-delayed,
   .conic-ring, .scanline, .pulse-success, .animate-soft-ping,
   .success-flash-layer, .animate-stamp, .animate-ring-burst,
-  .check-draw path, .confetti-piece, .animate-banner-pop {
+  .check-draw path, .confetti-piece, .animate-banner-pop,
+  .rainbow-sweep, .success-hue-ring, .confetti-rain > span, .text-rainbow-shine {
     animation: none !important;
   }
 }

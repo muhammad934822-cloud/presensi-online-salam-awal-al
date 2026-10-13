@@ -150,8 +150,8 @@ export function ParticipantHome({
                 </span>
               </span>
               {verified ? (
-                <span className="relative inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-200">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Hadir
+                <span className="pulse-dot relative inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-200">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Hadir ✓
                 </span>
               ) : (
                 <span className="relative inline-flex items-center gap-1 text-xs font-semibold text-[var(--gold)] transition-all group-hover:gap-2">
