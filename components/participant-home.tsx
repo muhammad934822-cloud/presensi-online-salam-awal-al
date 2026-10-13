@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, CheckCircle2, Circle, ScanFace, Settings, Home, Lightbulb, Clock } from "lucide-react"
+import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, CheckCircle2, Circle, ScanFace, Settings, Home, Lightbulb } from "lucide-react"
 import { GlassCard } from "./ui-kit"
 import { QrPanel } from "./qr-panel"
 import { DashboardShell, LiveClock, type DashSection } from "./dashboard-shell"
@@ -11,12 +11,6 @@ import { EVENTS, EVENT_LABELS, type EventKey } from "@/lib/db/schema"
 
 type Codes = Record<string, { code: string; verifiedAt: Date | string | null }>
 
-/** Batas waktu presensi per kegiatan (sinkron dengan validasi server di app/actions/participant.ts). */
-const DEADLINE: Record<EventKey, string> = {
-  studium_generale: "16.00",
-  mabit: "23.00",
-  konsumsi: "09.00",
-}
 
 const ICONS: Record<EventKey, typeof GraduationCap> = {
   studium_generale: GraduationCap,
@@ -196,7 +190,6 @@ export function ParticipantHome({
 
       <p className="mt-4 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-3 text-center text-xs leading-relaxed text-muted-foreground">
         <Lightbulb className="mr-1 inline h-3.5 w-3.5 -translate-y-px text-[var(--gold)]" aria-hidden="true" /> Tips: Buka menu <b>Presensi</b> di sidebar saat panitia memanggil, lalu tunjukkan QR-mu.
-        Batas presensi per kegiatan: <Clock className="mx-0.5 inline h-3 w-3 -translate-y-px" aria-hidden="true" /> SG s.d. {DEADLINE.studium_generale} &middot; Mabit s.d. {DEADLINE.mabit} &middot; Konsumsi s.d. {DEADLINE.konsumsi}.
         Butuh bantuan? Pakai tombol{" "}
         <Settings className="inline h-3 w-3" /> Pengaturan untuk ganti nama atau password.
       </p>

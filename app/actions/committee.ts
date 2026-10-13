@@ -12,7 +12,6 @@ import {
 import { COMMITTEE_PASSWORD } from "@/lib/constants"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/queries"
-import { isPresenseClosed, PRESENSE_DEADLINE } from "@/lib/deadline"
 
 type ActionResult = { ok: boolean; error?: string }
 
@@ -39,10 +38,6 @@ export async function verifyCode(
 
   const code = rawCode.replace(/\D/g, "").trim()
   if (code.length !== 16) return { ok: false, error: "Kode harus 16 digit angka." }
-
-  // Batas waktu presensi per kegiatan (bisa diubah di app/actions/participant.ts).
-  if (isPresenseClosed(event))
-    return { ok: false, error: `Presensi kegiatan ini sudah ditutup (batas ${PRESENSE_DEADLINE[event]} WITA). Hubungi koordinator untuk koreksi manual.` }
 
   const [record] = await db
     .select()

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, ShieldCheck, ScanLine, Users, Activity, Home , Lightbulb, Clock, History } from "lucide-react"
+import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, ShieldCheck, ScanLine, Users, Activity, Home , Lightbulb, History } from "lucide-react"
 import { GlassCard } from "./ui-kit"
 import { VerifySubmenu } from "./committee/verify-submenu"
 import { RecapSubmenu } from "./committee/recap-submenu"
@@ -18,12 +18,6 @@ const ICONS: Record<EventKey, typeof GraduationCap> = {
   konsumsi: UtensilsCrossed,
 }
 
-/** Jam kegiatan — sinkron dengan validasi server (app/actions/participant.ts). */
-const DEADLINE: Record<EventKey, string> = {
-  studium_generale: "16.00",
-  mabit: "23.00",
-  konsumsi: "09.00",
-}
 
 export function CommitteeHome({
   recaps,
@@ -127,8 +121,7 @@ export function CommitteeHome({
               <span className="relative">
                 <span className="block font-semibold text-foreground">{EVENT_LABELS[ev]}</span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
-                  <Clock className="mr-1 inline h-3 w-3 -translate-y-px" aria-hidden="true" />
-                  {count} terverifikasi · s.d. {DEADLINE[ev]}
+                  {count} terverifikasi
                 </span>
               </span>
               <span className="relative inline-flex items-center gap-1 text-xs font-semibold text-[var(--gold)] transition-all group-hover:gap-2">
