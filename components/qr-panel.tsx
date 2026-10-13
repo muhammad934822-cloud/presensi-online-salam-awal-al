@@ -100,7 +100,7 @@ export function QrPanel({
 
       {verified ? (
         <div className="pulse-success relative flex items-center justify-center gap-2 overflow-hidden rounded-2xl border border-emerald-400/40 bg-emerald-400/15 px-4 py-3 text-sm font-semibold text-foreground">
-          <PartyPopper className="h-5 w-5 shrink-0 animate-float text-[var(--gold)]" aria-hidden="true" />
+          <PartyPopper className="h-5 w-5 shrink-0 text-[var(--gold)]" aria-hidden="true" />
           <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-300" />
           <span>
             Hadir — Alhamdulillah, presensimu tercatat

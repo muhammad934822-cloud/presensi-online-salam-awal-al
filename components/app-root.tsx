@@ -33,7 +33,7 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
       <div className="mx-auto flex w-full max-w-2xl flex-col justify-center gap-8 text-center">
         <BrandHeader />
         <div className="animate-rise-2 mx-auto max-w-md">
-          <span className="animate-float mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-[linear-gradient(135deg,var(--gold),var(--purple)_60%,var(--blue))] text-white shadow-xl shadow-[var(--purple)]/30">
+          <span className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-[linear-gradient(135deg,var(--gold),var(--purple)_60%,var(--blue))] text-white shadow-xl shadow-[var(--purple)]/30">
             {isPanitia ? <ShieldCheck className="h-10 w-10" /> : <GraduationCap className="h-10 w-10" />}
           </span>
           <h2 className="font-serif text-2xl font-bold text-foreground">
@@ -85,12 +85,12 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
       <div className="text-center sm:text-left">
         {/* Badge meriah */}
         <span className="animate-rise inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-xs font-semibold text-foreground/90 backdrop-blur">
-          <Sparkles className="h-3.5 w-3.5 animate-float text-[var(--gold)]" aria-hidden="true" />
+          <Sparkles className="h-3.5 w-3.5 text-[var(--gold)]" aria-hidden="true" />
           🕌 Salam Awal Al Uswah — Presensi Digital
         </span>
         <BrandHeader />
         <p className="animate-rise-1 mt-5 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
-          Sistem presensi digital untuk kegiatan <span className="text-rainbow-shine font-bold">Salam Awal Al Uswah</span>.
+          Sistem presensi digital untuk kegiatan <span className="font-bold text-[var(--gold)]">Salam Awal Al Uswah</span>.
           Masuk sebagai peserta untuk menampilkan kode QR presensi, atau sebagai panitia untuk memverifikasi dan merekap kehadiran.
         </p>
 
@@ -100,10 +100,10 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
             { icon: GraduationCap, label: "Studium Generale", color: "var(--gold)" },
             { icon: MoonIcon, label: "Mabit", color: "var(--purple)" },
             { icon: UtensilsCrossed, label: "Konsumsi", color: "var(--blue)" },
-          ].map((e, i) => (
+          ].map((e) => (
             <span
               key={e.label}
-              className={`animate-float${i === 1 ? "-delayed" : ""} inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-foreground/85 backdrop-blur`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-foreground/85 backdrop-blur"
             >
               <e.icon className="h-3.5 w-3.5" style={{ color: e.color }} aria-hidden="true" />
               {e.label}
@@ -161,7 +161,7 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
         ].map((f, i) => (
           <div
             key={f.label}
-            className={`lift group rounded-2xl border border-white/8 bg-white/[0.04] px-2 py-3 backdrop-blur-sm transition-colors hover:border-[var(--gold)]/40 ${i === 1 ? "animate-float-delayed" : ""}`}
+            className={`lift group rounded-2xl border border-white/8 bg-white/[0.04] px-2 py-3 backdrop-blur-sm transition-colors hover:border-[var(--gold)]/40 `}
           >
             <f.icon className="mx-auto mb-1.5 h-4 w-4 text-[var(--gold)] transition-transform duration-300 group-hover:scale-125" aria-hidden="true" />
             <p className="text-xs font-semibold text-foreground">{f.label}</p>

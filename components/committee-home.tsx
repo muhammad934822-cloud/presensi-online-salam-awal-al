@@ -48,7 +48,7 @@ export function CommitteeHome({
         ].map((s, i) => (
           <GlassCard key={s.label} className={"animate-rise-" + (i + 1) + " !p-0"}>
             <div className="px-4 py-4 text-center">
-              <s.icon className="mx-auto mb-1.5 h-5 w-5 animate-float" style={{ color: s.accent }} />
+              <s.icon className="mx-auto mb-1.5 h-5 w-5" style={{ color: s.accent }} />
               <p className="font-serif text-2xl font-bold tabular-nums text-foreground">{s.value}</p>
               <p className="text-[11px] text-muted-foreground">{s.label}</p>
             </div>
