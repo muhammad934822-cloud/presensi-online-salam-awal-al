@@ -37,7 +37,7 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
             {isPanitia ? <ShieldCheck className="h-10 w-10" /> : <GraduationCap className="h-10 w-10" />}
           </span>
           <h2 className="font-serif text-2xl font-bold text-foreground">
-            {isPanitia ? "Selamat datang, Panitia! 👋" : `Halo, ${(participant?.nama ?? "").split(" ")[0] || "Peserta"}! 👋`}
+            {isPanitia ? "Selamat datang, Panitia" : `Halo, ${(participant?.nama ?? "").split(" ")[0] || "Peserta"}`}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             {isPanitia
@@ -86,7 +86,7 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
         {/* Badge meriah */}
         <span className="animate-rise inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-xs font-semibold text-foreground/90 backdrop-blur">
           <Sparkles className="h-3.5 w-3.5 text-[var(--gold)]" aria-hidden="true" />
-          🕌 Salam Awal Al Uswah — Presensi Digital
+          Salam Awal Al Uswah — Presensi Digital
         </span>
         {/* Jarak aman: badge tidak menempel ke judul di bawahnya */}
         <div className="mt-7">

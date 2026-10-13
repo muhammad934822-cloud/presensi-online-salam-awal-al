@@ -93,7 +93,7 @@ export function QrPanel({
           <span className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-white/10">
             <CheckCircle2 className="h-9 w-9 text-emerald-300" />
           </span>
-          <p className="text-lg font-extrabold tracking-tight text-emerald-200">Presensi Berhasil! 🎉</p>
+          <p className="text-lg font-extrabold tracking-tight text-emerald-200">Presensi Berhasil!</p>
           <p className="mt-0.5 text-xs text-emerald-100/80">Kehadiranmu di {label} sudah tercatat</p>
         </div>
       )}

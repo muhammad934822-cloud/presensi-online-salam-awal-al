@@ -92,7 +92,7 @@ function SuccessOverlay({ result, onDone }: { result: SuccessResult; onDone: () 
         <p className="text-base text-white/85 sm:text-lg">{result.kelas} &middot; No. {result.nomor}</p>
         <div className="animate-banner-pop mx-auto mt-5 flex items-center gap-2 rounded-2xl border-2 border-white/70 bg-white/15 px-5 py-2.5 backdrop-blur" style={{ animationDelay: "0.25s" }}>
           <CheckCircle2 className="h-7 w-7 text-white" />
-          <span className="text-lg font-bold text-white">Hadir ✓ Tercatat di sistem</span>
+          <span className="text-lg font-bold text-white">Hadir — Tercatat di sistem</span>
         </div>
         <p className="mt-4 text-xs uppercase tracking-widest text-white/70">Ketuk untuk menutup</p>
       </div>
@@ -217,7 +217,7 @@ export function VerifySubmenu({ event }: { event: string }) {
                   <CheckCircle2 className="h-10 w-10 text-emerald-300" />
                 </div>
                 <div className="text-foreground">
-                  <p className="text-2xl font-extrabold leading-tight text-emerald-300 sm:text-3xl">Presensi Berhasil! ✅</p>
+                  <p className="text-2xl font-extrabold leading-tight text-emerald-300 sm:text-3xl">Presensi Berhasil!</p>
                   <p className="mt-1 text-lg font-semibold text-foreground/90">
                     {result.nama} &mdash; {result.kelas} No. {result.nomor}
                   </p>

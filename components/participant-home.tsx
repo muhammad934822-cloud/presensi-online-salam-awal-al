@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, CheckCircle2, ScanFace, Settings, Home } from "lucide-react"
+import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, CheckCircle2, Circle, ScanFace, Settings, Home, Lightbulb } from "lucide-react"
 import { GlassCard } from "./ui-kit"
 import { QrPanel } from "./qr-panel"
 import { DashboardShell, type DashSection } from "./dashboard-shell"
@@ -52,6 +52,27 @@ export function ParticipantHome({
   const [selected, setSelected] = useState<EventKey | null>(null)
   const router = useRouter()
 
+  /* Auto-refresh halus: status kehadiran peserta (hasil scan panitia) diambil
+     dari server. Polling ringan tiap 4 detik saat halaman aktif + refresh saat
+     tab kembali fokus, supaya begitu discan, tanda "Hadir" & animasi sukses
+     langsung muncul tanpa perlu reload manual. */
+  useEffect(() => {
+    let alive = true
+    const tick = () => {
+      if (alive && document.visibilityState === "visible") router.refresh()
+    }
+    const id = window.setInterval(tick, 4000)
+    const onFocus = () => tick()
+    window.addEventListener("focus", onFocus)
+    document.addEventListener("visibilitychange", onFocus)
+    return () => {
+      alive = false
+      window.clearInterval(id)
+      window.removeEventListener("focus", onFocus)
+      document.removeEventListener("visibilitychange", onFocus)
+    }
+  }, [router])
+
   const verifiedCount = EVENTS.filter((ev) => Boolean(codes[ev]?.verifiedAt)).length
   const initials = nama
     .split(/\s+/)
@@ -80,7 +101,7 @@ export function ParticipantHome({
             </span>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Selamat datang kembali 👋</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">Selamat datang kembali</p>
             <p className="truncate text-lg font-semibold text-foreground">{nama}</p>
             <p className="text-sm text-muted-foreground">
               {kelas} &middot; No. {nomorPresensi}
@@ -114,7 +135,11 @@ export function ParticipantHome({
                     : "bg-white/[0.06] text-muted-foreground")
                 }
               >
-                {codes[ev]?.verifiedAt ? "✓ " : "○ "}
+                {codes[ev]?.verifiedAt ? (
+                  <CheckCircle2 className="mr-1 inline h-3.5 w-3.5 -translate-y-px" />
+                ) : (
+                  <Circle className="mr-1 inline h-3 w-3 -translate-y-px opacity-60" />
+                )}
                 {EVENT_LABELS[ev]}
               </span>
             ))}
@@ -150,7 +175,7 @@ export function ParticipantHome({
               </span>
               {verified ? (
                 <span className="pulse-dot relative inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-200">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Hadir ✓
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Hadir
                 </span>
               ) : (
                 <span className="relative inline-flex items-center gap-1 text-xs font-semibold text-[var(--gold)] transition-all group-hover:gap-2">
@@ -163,7 +188,7 @@ export function ParticipantHome({
       </div>
 
       <p className="mt-4 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-3 text-center text-xs leading-relaxed text-muted-foreground">
-        💡 Tips: Buka menu <b>Presensi</b> di sidebar saat panitia memanggil, lalu tunjukkan QR-mu.
+        <Lightbulb className="mr-1 inline h-3.5 w-3.5 -translate-y-px text-[var(--gold)]" aria-hidden="true" /> Tips: Buka menu <b>Presensi</b> di sidebar saat panitia memanggil, lalu tunjukkan QR-mu.
         Jangan bagikan kode unikmu kepada orang lain. Butuh bantuan? Pakai tombol{" "}
         <Settings className="inline h-3 w-3" /> Pengaturan untuk ganti nama atau password.
       </p>
@@ -193,7 +218,7 @@ export function ParticipantHome({
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold text-foreground">{EVENT_LABELS[ev]}</span>
                   <span className="text-sm text-muted-foreground">
-                    {verified ? "Presensi sudah tervalidasi ✓" : "Tampilkan QR / kode unik ke panitia"}
+                    {verified ? "Presensi sudah tervalidasi" : "Tampilkan QR / kode unik ke panitia"}
                   </span>
                 </span>
                 <ChevronRight className="h-5 w-5 shrink-0 text-foreground/50 transition group-hover:translate-x-1 group-hover:text-[var(--gold)]" />

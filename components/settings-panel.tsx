@@ -48,7 +48,7 @@ export function SettingsPanel({
       const fd = new FormData()
       fd.set("nama", newName)
       const res = await updateParticipantName(fd)
-      setNameMsg(res.ok ? { ok: true, text: "Nama berhasil diganti ✨" } : { ok: false, text: res.error ?? "Gagal." })
+      setNameMsg(res.ok ? { ok: true, text: "Nama berhasil diperbarui" } : { ok: false, text: res.error ?? "Gagal." })
       if (res.ok) {
         setNewName("")
         router.refresh()
@@ -63,7 +63,7 @@ export function SettingsPanel({
       fd.set("kodeUnik", kodeUnik)
       fd.set("newPassword", newPass)
       const res = await changePasswordSelfWithKode(fd)
-      setPassMsg(res.ok ? { ok: true, text: "Password berhasil diganti 🔒" } : { ok: false, text: res.error ?? "Gagal." })
+      setPassMsg(res.ok ? { ok: true, text: "Password berhasil diganti" } : { ok: false, text: res.error ?? "Gagal." })
       if (res.ok) {
         setKodeUnik("")
         setNewPass("")
@@ -190,7 +190,7 @@ export function SettingsPanel({
             <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
               {role === "panitia"
                 ? "Scanner sudah dilengkapi suara 'beep' + animasi centang besar saat scan berhasil — pastikan volume perangkat menyala di hari-H."
-                : "Saat presensimu berhasil discan, status di halaman Presensi langsung berubah menjadi 'Hadir ✓' tanpa perlu refresh."}
+                : "Saat presensimu berhasil discan, status di halaman Presensi langsung berubah menjadi 'Hadir' tanpa perlu refresh."}
             </p>
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, ShieldCheck, ScanLine, Users, Activity, Home } from "lucide-react"
+import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, ShieldCheck, ScanLine, Users, Activity, Home , Lightbulb} from "lucide-react"
 import { GlassCard } from "./ui-kit"
 import { VerifySubmenu } from "./committee/verify-submenu"
 import { RecapSubmenu } from "./committee/recap-submenu"
@@ -91,7 +91,7 @@ export function CommitteeHome({
       </div>
 
       <p className="mt-4 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-3 text-center text-xs leading-relaxed text-muted-foreground">
-        💡 Buka menu <b>Presensi</b> di sidebar untuk scan QR & rekap per kegiatan, atau{" "}
+        <Lightbulb className="mr-1 inline h-3.5 w-3.5 -translate-y-px text-[var(--gold)]" aria-hidden="true" /> Buka menu <b>Presensi</b> di sidebar untuk scan QR & rekap per kegiatan, atau{" "}
         <b>Daftar Peserta</b> untuk mengelola akun & mereset password peserta (butuh kode unik).
       </p>
     </div>
