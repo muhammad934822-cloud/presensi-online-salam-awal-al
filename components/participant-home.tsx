@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, CheckCircle2, ScanFace, Settings, Home } from "lucide-react"
 import { GlassCard } from "./ui-kit"
-import { BrandHeader } from "./brand-header"
 import { QrPanel } from "./qr-panel"
 import { DashboardShell, type DashSection } from "./dashboard-shell"
 import { SettingsPanel } from "./settings-panel"
@@ -239,9 +238,7 @@ export function ParticipantHome({
 
   return (
     <div className="w-full">
-      <BrandHeader compact />
-      <div className="mt-6">
-        <DashboardShell
+      <DashboardShell
           sections={["beranda", "presensi", "pengaturan"]}
           active={section}
           onNavigate={(s) => {
@@ -274,7 +271,6 @@ export function ParticipantHome({
             {section === "pengaturan" && pengaturan}
           </div>
         </DashboardShell>
-      </div>
     </div>
   )
 }

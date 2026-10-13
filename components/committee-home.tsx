@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, ShieldCheck, ScanLine, Users, Activity, Home } from "lucide-react"
 import { GlassCard } from "./ui-kit"
-import { BrandHeader } from "./brand-header"
 import { VerifySubmenu } from "./committee/verify-submenu"
 import { RecapSubmenu } from "./committee/recap-submenu"
 import { AccountsSection } from "./committee/accounts-section"
@@ -93,7 +92,7 @@ export function CommitteeHome({
 
       <p className="mt-4 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-3 text-center text-xs leading-relaxed text-muted-foreground">
         💡 Buka menu <b>Presensi</b> di sidebar untuk scan QR & rekap per kegiatan, atau{" "}
-        <b>Daftar Peserta</b> untuk mengelola akun & mereset password menjadi 12345678.
+        <b>Daftar Peserta</b> untuk mengelola akun & mereset password peserta (butuh kode unik).
       </p>
     </div>
   )
@@ -194,9 +193,7 @@ export function CommitteeHome({
 
   return (
     <div className="w-full">
-      <BrandHeader compact />
-      <div className="mt-6">
-        <DashboardShell
+      <DashboardShell
           sections={["beranda", "presensi", "peserta", "pengaturan"]}
           active={section}
           onNavigate={(s) => {
@@ -232,7 +229,6 @@ export function CommitteeHome({
             {section === "pengaturan" && pengaturan}
           </div>
         </DashboardShell>
-      </div>
     </div>
   )
 }

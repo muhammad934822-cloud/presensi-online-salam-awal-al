@@ -4,6 +4,7 @@ import { useState } from "react"
 import type { ReactNode } from "react"
 import { LayoutGrid, LayoutDashboard, Settings, X } from "lucide-react"
 import { ThemeToggle } from "./theme-provider"
+import { BrandHeader } from "./brand-header"
 
 export type DashSection = "beranda" | "presensi" | "peserta" | "pengaturan"
 
@@ -55,7 +56,11 @@ export function DashboardShell({
         }
       >
         <div className="flex h-full flex-col rounded-3xl border border-[var(--line)] bg-[var(--panel)] p-3 shadow-2xl backdrop-blur-xl lg:sticky lg:top-6">
-          <div className="mb-3 flex items-center justify-between px-2 pt-1">
+          {/* Brand kecil di atas sidebar (menggantikan header besar yang sebelumnya bertumpuk/tabrakan) */}
+          <div className="mb-4 px-1 pt-1">
+            <BrandHeader compact />
+          </div>
+          <div className="mb-3 flex items-center justify-between border-t border-[var(--line)] px-2 pt-3">
             <span className="font-serif text-sm font-semibold tracking-wide text-foreground/80">Menu</span>
             <button
               onClick={() => setOpen(false)}

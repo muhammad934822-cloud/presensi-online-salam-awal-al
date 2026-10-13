@@ -87,15 +87,24 @@ export async function deleteParticipant(participantId: string): Promise<ActionRe
   return { ok: true }
 }
 
-// Panitia mereset password peserta menjadi "12345678" (kolom `password_hash` yang sudah ada).
-export async function resetParticipantPassword(participantId: string): Promise<ActionResult> {
+// Panitia mereset password peserta menjadi "12345678" dengan konfirmasi kode unik
+// (kolom `kode_unik` dan `password_hash` yang sudah ada — tidak mengubah skema DB).
+export async function resetParticipantPassword(
+  participantId: string,
+  kodeUnik: string,
+): Promise<ActionResult> {
   if (!(await isCommittee())) return { ok: false, error: "Tidak diizinkan." }
+  const code = kodeUnik.trim()
+  if (code.length < 4) return { ok: false, error: "Kode unik minimal 4 karakter." }
+
   const [p] = await db
-    .select({ id: participants.id })
+    .select({ id: participants.id, kodeUnik: participants.kodeUnik })
     .from(participants)
     .where(eq(participants.id, participantId))
     .limit(1)
   if (!p) return { ok: false, error: "Peserta tidak ditemukan." }
+  if (p.kodeUnik !== code)
+    return { ok: false, error: "Kode unik salah. Reset dibatalkan." }
 
   await db
     .update(participants)

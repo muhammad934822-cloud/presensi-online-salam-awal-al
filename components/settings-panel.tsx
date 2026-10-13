@@ -58,10 +58,6 @@ export function SettingsPanel({
 
   function savePassword() {
     setPassMsg(null)
-    if (role === "panitia") {
-      setPassMsg({ ok: false, text: "Password panitia diatur lewat file konfigurasi." })
-      return
-    }
     startTransition(async () => {
       const fd = new FormData()
       fd.set("currentPassword", oldPass)
@@ -144,20 +140,18 @@ export function SettingsPanel({
         </GlassCard>
       )}
 
-      {/* Ganti password */}
-      <GlassCard className="animate-rise-3">
-        <div className="mb-3 flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--blue),#8fb8ef)] text-[oklch(0.2_0.03_255)] shadow-lg shadow-[var(--blue)]/30">
-            <KeyRound className="h-5 w-5" />
-          </span>
-          <div>
-            <p className="font-semibold text-foreground">Ganti Password</p>
-            <p className="text-xs text-muted-foreground">
-              {role === "peserta" ? "Password lama tidak akan bisa dipakai lagi" : "Khusus peserta — panitia memakai password tetap"}
-            </p>
+      {/* Ganti password — KHUSUS PESERTA (opsi panitia dihilangkan) */}
+      {role === "peserta" && (
+        <GlassCard className="animate-rise-3">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--blue),#8fb8ef)] text-[oklch(0.2_0.03_255)] shadow-lg shadow-[var(--blue)]/30">
+              <KeyRound className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-semibold text-foreground">Ganti Password</p>
+              <p className="text-xs text-muted-foreground">Password lama tidak akan bisa dipakai lagi</p>
+            </div>
           </div>
-        </div>
-        {role === "peserta" && (
           <div className="grid gap-3">
             <TextField
               label="Password lama"
@@ -182,8 +176,8 @@ export function SettingsPanel({
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Perbarui Password
             </GradientButton>
           </div>
-        )}
-      </GlassCard>
+        </GlassCard>
+      )}
 
       {/* Info notifikasi / ide tambahan */}
       <GlassCard className="animate-rise-4">
