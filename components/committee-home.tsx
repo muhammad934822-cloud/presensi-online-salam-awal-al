@@ -9,6 +9,7 @@ import { RecapSubmenu } from "./committee/recap-submenu"
 import { AccountsSection } from "./committee/accounts-section"
 import { DashboardShell, LiveClock, type DashSection } from "./dashboard-shell"
 import { SettingsPanel } from "./settings-panel"
+import { ActivityList } from "./activity-list"
 import { EVENTS, EVENT_LABELS, type EventKey } from "@/lib/db/schema"
 import type { RecapRow, AccountRow, ActivityRow, ClassStat } from "@/lib/queries"
 
@@ -137,75 +138,53 @@ export function CommitteeHome({
         <b>Daftar Peserta</b> untuk mengelola akun & mereset password peserta.
       </p>
 
-      {/* Statistik kehadiran per kelas — dikelompokkan per kegiatan */}
+      {/* Statistik kehadiran per kelas — RINGKAS, klik untuk detail */}
       {classStats && classStats.length > 0 && (
         <GlassCard className="animate-rise-3 mt-5">
-          <div className="px-4 py-3.5">
-            <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Users className="h-4 w-4 text-[var(--blue)]" /> Kehadiran per Kelas
-            </p>
-            <div className="mt-2 grid gap-x-5 gap-y-2 md:grid-cols-3">
-              {EVENTS.map((ev) => {
-                const list = classStats.filter((c) => c.event === ev)
-                if (list.length === 0) return null
-                const Icon = ICONS[ev]
-                const totalHadir = list.reduce((n, c) => n + c.hadir, 0)
-                const totalAll = list.reduce((n, c) => n + c.total, 0)
-                return (
-                  <div key={ev}>
-                    <p className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      <Icon className="h-3.5 w-3.5 text-[var(--gold)]" /> {EVENT_LABELS[ev]}
-                      <span className="ml-auto normal-case tracking-normal tabular-nums">
-                        {totalHadir}/{totalAll}
-                      </span>
-                    </p>
-                    <ul className="space-y-1">
-                      {list.map((c) => {
-                        const pct = c.total ? Math.round((c.hadir / c.total) * 100) : 0
-                        return (
-                          <li key={ev + c.kelas} className="flex items-center gap-2 text-xs">
-                            <span className="w-16 shrink-0 truncate font-medium text-foreground/85">{c.kelas}</span>
-                            <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
-                              <span
-                                className="block h-full rounded-full bg-[linear-gradient(90deg,var(--blue),var(--purple))] transition-all duration-700"
-                                style={{ width: `${Math.max(pct, c.hadir > 0 ? 6 : 0)}%` }}
-                              />
-                            </span>
-                            <span className="shrink-0 tabular-nums text-muted-foreground">{c.hadir}/{c.total}</span>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </div>
-                )
-              })}
-            </div>
+          <button
+            onClick={() => setSection("kelas")}
+            className="group flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
+          >
+            <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-foreground">
+              <Users className="h-4 w-4 shrink-0 text-[var(--blue)]" /> Kehadiran per Kelas
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--gold)] transition-all group-hover:gap-2">
+              Lihat detail <ChevronRight className="h-3.5 w-3.5" />
+            </span>
+          </button>
+          <div className="grid gap-x-5 gap-y-2 border-t border-[var(--line)] px-4 py-3 md:grid-cols-3">
+            {EVENTS.map((ev) => {
+              const list = classStats.filter((c) => c.event === ev)
+              if (list.length === 0) return null
+              const totalHadir = list.reduce((n, c) => n + c.hadir, 0)
+              const totalAll = list.reduce((n, c) => n + c.total, 0)
+              return (
+                <div key={ev} className="flex items-baseline justify-between gap-2 text-xs">
+                  <span className="min-w-0 truncate font-medium text-foreground/85">{EVENT_LABELS[ev]}</span>
+                  <span className="shrink-0 tabular-nums text-muted-foreground">{totalHadir}/{totalAll}</span>
+                </div>
+              )
+            })}
           </div>
         </GlassCard>
       )}
 
-      {/* Riwayat aktivitas (audit trail) */}
+      {/* Riwayat aktivitas — RINGKAS (6 baris), klik untuk rekap lengkap */}
       {activity && activity.length > 0 && (
-        <GlassCard className="animate-rise-4 mt-5">
+        <GlassCard className="animate-rise-4 mt-5 !p-0">
           <div className="px-4 py-4">
-            <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-              <History className="h-4 w-4 text-[var(--purple)]" /> Aktivitas Terbaru
-            </p>
-            <ul className="grid gap-1.5">
-              {activity.slice(0, 8).map((a) => (
-                <li key={a.id} className="flex items-baseline justify-between gap-3 rounded-xl bg-white/[0.04] px-3 py-1.5 text-xs">
-                  <span className="min-w-0 truncate text-foreground/85">
-                    <b className="font-semibold">{a.actor}</b>
-                    <span className="mx-1.5 text-muted-foreground">·</span>
-                    <span className="capitalize text-muted-foreground">{a.action.replace(/-/g, " ")}</span>
-                    {a.detail && <span className="ml-1.5 text-muted-foreground/80">({a.detail})</span>}
-                  </span>
-                  <span className="shrink-0 tabular-nums text-muted-foreground">
-                    {new Date(a.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <History className="h-4 w-4 text-[var(--purple)]" /> Aktivitas Terbaru
+              </p>
+              <button
+                onClick={() => setSection("riwayat")}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--gold)] transition-all hover:gap-2"
+              >
+                Semua riwayat <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <ActivityList rows={activity} compact />
           </div>
         </GlassCard>
       )}
@@ -306,6 +285,81 @@ export function CommitteeHome({
     </div>
   )
 
+  /* ---------- Riwayat lengkap (semua aktivitas terekap) ---------- */
+  const riwayat = (
+    <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-2xl animate-rise">
+      <div className="mb-4 flex items-center gap-3">
+        <button
+          onClick={() => setSection("beranda")}
+          className="inline-flex h-9 shrink-0 items-center gap-1 rounded-xl border border-[var(--line)] bg-white/[0.05] px-2.5 text-xs text-foreground/80 transition hover:-translate-x-0.5 hover:border-[var(--gold)]/50 active:scale-95"
+        >
+          <ChevronRight className="h-3.5 w-3.5 rotate-180" /> Beranda
+        </button>
+        <p className="flex min-w-0 items-center gap-2 font-serif text-lg font-semibold text-foreground">
+          <History className="h-5 w-5 shrink-0 text-[var(--purple)]" /> Riwayat Aktivitas
+        </p>
+      </div>
+      <GlassCard>
+        <div className="px-4 py-4">
+          <ActivityList rows={activity ?? []} />
+        </div>
+      </GlassCard>
+    </div>
+  )
+
+  /* ---------- Detail kehadiran per kelas ---------- */
+  const kelasDetail = (
+    <div className="mx-auto w-full max-w-md lg:mx-0 lg:max-w-2xl animate-rise">
+      <div className="mb-4 flex items-center gap-3">
+        <button
+          onClick={() => setSection("beranda")}
+          className="inline-flex h-9 shrink-0 items-center gap-1 rounded-xl border border-[var(--line)] bg-white/[0.05] px-2.5 text-xs text-foreground/80 transition hover:-translate-x-0.5 hover:border-[var(--gold)]/50 active:scale-95"
+        >
+          <ChevronRight className="h-3.5 w-3.5 rotate-180" /> Beranda
+        </button>
+        <p className="flex min-w-0 items-center gap-2 font-serif text-lg font-semibold text-foreground">
+          <Users className="h-5 w-5 shrink-0 text-[var(--blue)]" /> Kehadiran per Kelas
+        </p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        {EVENTS.map((ev) => {
+          const list = (classStats ?? []).filter((c) => c.event === ev)
+          if (list.length === 0) return null
+          const Icon = ICONS[ev]
+          const totalHadir = list.reduce((n, c) => n + c.hadir, 0)
+          const totalAll = list.reduce((n, c) => n + c.total, 0)
+          return (
+            <GlassCard key={ev}>
+              <div className="px-4 py-4">
+                <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Icon className="h-4 w-4 text-[var(--gold)]" /> {EVENT_LABELS[ev]}
+                  <span className="ml-auto text-xs tabular-nums text-muted-foreground">{totalHadir}/{totalAll}</span>
+                </p>
+                <ul className="space-y-1.5">
+                  {list.map((c) => {
+                    const pct = c.total ? Math.round((c.hadir / c.total) * 100) : 0
+                    return (
+                      <li key={ev + c.kelas} className="flex items-center gap-2 text-xs">
+                        <span className="w-16 shrink-0 break-words font-medium text-foreground/85">{c.kelas}</span>
+                        <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
+                          <span
+                            className="block h-full rounded-full bg-[linear-gradient(90deg,var(--blue),var(--purple))] transition-all duration-700"
+                            style={{ width: `${Math.max(pct, c.hadir > 0 ? 6 : 0)}%` }}
+                          />
+                        </span>
+                        <span className="shrink-0 tabular-nums text-muted-foreground">{c.hadir}/{c.total}</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            </GlassCard>
+          )
+        })}
+      </div>
+    </div>
+  )
+
   return (
     <div className="w-full">
       <DashboardShell
@@ -343,6 +397,8 @@ export function CommitteeHome({
             {section === "presensi" && presensi}
             {section === "peserta" && peserta}
             {section === "pengaturan" && pengaturan}
+            {section === "riwayat" && riwayat}
+            {section === "kelas" && kelasDetail}
           </div>
         </DashboardShell>
     </div>

@@ -88,6 +88,8 @@ export function VerifySubmenu({ event }: { event: string }) {
   const [manual, setManual] = useState("")
   const [result, setResult] = useState<Result | null>(null)
   const [showOverlay, setShowOverlay] = useState(false)
+  /* Ref stabil utk callback scanner — mencegah efek kamera restart tiap render */
+  const submitRef = useRef<(raw: string) => void>(() => {})
   const [pending, startTransition] = useTransition()
   const router = useRouter()
 
@@ -127,12 +129,13 @@ export function VerifySubmenu({ event }: { event: string }) {
     [event, router],
   )
 
-  const onScan = useCallback(
-    (text: string) => {
-      submit(text)
-    },
-    [submit],
-  )
+  const onScan = useCallback((text: string) => submitRef.current(text), [])
+
+  /* Isi ref dengan closure submit terbaru setiap render (stabil utk scanner) */
+  submitRef.current = (raw: string) => {
+    if (showOverlay) return // overlay aktif — abaikan scan agar tidak menimpa hasil
+    submit(raw)
+  }
 
   return (
     <div className="grid gap-4">

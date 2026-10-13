@@ -37,7 +37,7 @@ export function LiveClock({ className = "" }: { className?: string }) {
   )
 }
 
-export type DashSection = "beranda" | "presensi" | "peserta" | "pengaturan"
+export type DashSection = "beranda" | "presensi" | "peserta" | "pengaturan" | "riwayat" | "kelas"
 
 const NAV: { key: DashSection; label: string; icon: typeof LayoutGrid; desc: string }[] = [
   { key: "beranda", label: "Beranda", icon: LayoutGrid, desc: "Ringkasan & pilihan kegiatan" },

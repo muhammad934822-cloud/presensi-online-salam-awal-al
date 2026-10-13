@@ -21,6 +21,21 @@ export type ActivityRow = {
   createdAt: Date
 }
 
+/** Ambil SEMUA riwayat aktivitas (untuk halaman rekap lengkap). */
+export async function getAllActivity(): Promise<ActivityRow[]> {
+  const ok = await ensureActivityLog()
+  if (!ok) return []
+  try {
+    return await db
+      .select()
+      .from(activityLog)
+      .orderBy(desc(activityLog.createdAt))
+      .limit(1000)
+  } catch {
+    return []
+  }
+}
+
 /** Ambil riwayat aktivitas terbaru (hanya jika tabelnya sudah ada). */
 export async function getRecentActivity(limit = 20): Promise<ActivityRow[]> {
   const ok = await ensureActivityLog()
