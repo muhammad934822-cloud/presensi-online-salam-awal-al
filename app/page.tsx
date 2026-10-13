@@ -1,7 +1,7 @@
 import { DynamicBackground } from "@/components/dynamic-background"
 import { AppRoot } from "@/components/app-root"
 import { getCurrentParticipant, isCommittee } from "@/lib/session"
-import { getMyCodes, getRecapForEvent, getAllParticipants, type RecapRow } from "@/lib/queries"
+import { getMyCodes, getRecapForEvent, getAllParticipants, getRecentActivity, getClassStats, type RecapRow } from "@/lib/queries"
 import { EVENTS, type EventKey } from "@/lib/db/schema"
 
 export const dynamic = "force-dynamic"
@@ -16,13 +16,22 @@ export default async function Page() {
 
   let recaps: Record<EventKey, RecapRow[]> | null = null
   let accounts = null
+  let activity = null
+  let classStats = null
   if (committee) {
-    const results = await Promise.all(EVENTS.map((ev) => getRecapForEvent(ev)))
+    const [results, allAccounts, recentActivity, stats] = await Promise.all([
+      Promise.all(EVENTS.map((ev) => getRecapForEvent(ev))),
+      getAllParticipants(),
+      getRecentActivity(12),
+      getClassStats(),
+    ])
     recaps = {} as Record<EventKey, RecapRow[]>
     EVENTS.forEach((ev, i) => {
       recaps![ev] = results[i]
     })
-    accounts = await getAllParticipants()
+    accounts = allAccounts
+    activity = recentActivity
+    classStats = stats
   }
 
   return (
@@ -39,6 +48,8 @@ export default async function Page() {
           committee={committee}
           recaps={recaps}
           accounts={accounts}
+          activity={activity}
+          classStats={classStats}
         />
       </div>
     </main>

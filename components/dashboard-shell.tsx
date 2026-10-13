@@ -1,10 +1,37 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { ReactNode } from "react"
-import { LayoutGrid, LayoutDashboard, Settings, X } from "lucide-react"
+import { LayoutGrid, LayoutDashboard, Settings, X, Clock } from "lucide-react"
 import { ThemeToggle } from "./theme-provider"
 import { BrandHeader } from "./brand-header"
+
+/**
+ * Jam digital real-time. Sengaja hanya dirender di client (null saat SSR)
+ * supaya tidak pernah terjadi hydration mismatch.
+ */
+export function LiveClock({ className = "" }: { className?: string }) {
+  const [now, setNow] = useState<Date | null>(null)
+
+  useEffect(() => {
+    setNow(new Date())
+    const id = window.setInterval(() => setNow(new Date()), 1000)
+    return () => window.clearInterval(id)
+  }, [])
+
+  if (!now) return <span className={"inline-block h-5 w-24 rounded-lg bg-white/10 " + className} aria-hidden="true" />
+
+  const time = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
+  const date = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "short" })
+
+  return (
+    <span className={"inline-flex items-center gap-2 rounded-xl border border-[var(--line)] bg-white/[0.06] px-3 py-1.5 backdrop-blur-sm " + className}>
+      <Clock className="h-3.5 w-3.5 shrink-0 text-[var(--gold)]" aria-hidden="true" />
+      <span className="whitespace-nowrap text-xs font-semibold tabular-nums tracking-tight text-foreground">{time}</span>
+      <span className="hidden whitespace-nowrap text-[11px] text-muted-foreground sm:inline">WIB · {date}</span>
+    </span>
+  )
+}
 
 export type DashSection = "beranda" | "presensi" | "peserta" | "pengaturan"
 
@@ -118,6 +145,7 @@ export function DashboardShell({
             <LayoutDashboard className="h-4.5 w-4.5" />
           </button>
           <div className="min-w-0 flex-1">{headerLeft}</div>
+          <LiveClock className="hidden shrink-0 sm:inline-flex" />
           <ThemeToggle className="lg:hidden" />
         </div>
         {children}

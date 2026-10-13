@@ -1,6 +1,57 @@
 import { db } from "./db"
-import { participants, attendance, type EventKey } from "./db/schema"
-import { asc, eq } from "drizzle-orm"
+import { participants, attendance, activityLog, type EventKey } from "./db/schema"
+import { asc, desc, eq, sql } from "drizzle-orm"
+import { ensureActivityLog } from "./db/migrate"
+
+/**
+ * Tulis satu baris riwayat aktivitas. Sepenuhnya opsional: error ditelan
+ * (fire-and-forget) supaya logging tidak pernah mengganggu aksi utama.
+ */
+export function logActivity(actor: string, action: string, detail?: string) {
+  void ensureActivityLog()
+    .then((ok) => (ok ? db.insert(activityLog).values({ actor, action, detail: detail ?? null }) : undefined))
+    .catch(() => {})
+}
+
+export type ActivityRow = {
+  id: string
+  actor: string
+  action: string
+  detail: string | null
+  createdAt: Date
+}
+
+/** Ambil riwayat aktivitas terbaru (hanya jika tabelnya sudah ada). */
+export async function getRecentActivity(limit = 20): Promise<ActivityRow[]> {
+  const ok = await ensureActivityLog()
+  if (!ok) return []
+  try {
+    return await db
+      .select()
+      .from(activityLog)
+      .orderBy(desc(activityLog.createdAt))
+      .limit(limit)
+  } catch {
+    return []
+  }
+}
+
+export type ClassStat = { kelas: string; total: number; hadir: number }
+
+/** Statistik kehadiran per kelas dari seluruh baris attendance. */
+export async function getClassStats(): Promise<ClassStat[]> {
+  const rows = await db
+    .select({
+      kelas: participants.kelas,
+      total: sql<number>`count(*)`,
+      hadir: sql<number>`count(*) filter (where ${attendance.verifiedAt} is not null)`,
+    })
+    .from(attendance)
+    .innerJoin(participants, eq(attendance.participantId, participants.id))
+    .groupBy(participants.kelas)
+    .orderBy(asc(participants.kelas))
+  return rows.map((r) => ({ kelas: r.kelas, total: Number(r.total), hadir: Number(r.hadir) }))
+}
 
 export type RecapRow = {
   attendanceId: string

@@ -3,12 +3,13 @@
 import { useState } from "react"
 import { GraduationCap, ShieldCheck, ChevronRight, QrCode, Zap, LayoutDashboard, Sparkles, Moon as MoonIcon, UtensilsCrossed } from "lucide-react"
 import { BrandHeader } from "./brand-header"
+import { LiveClock } from "./dashboard-shell"
 import { PesertaAuth } from "./peserta-auth"
 import { PanitiaAuth } from "./panitia-auth"
 import { ParticipantHome } from "./participant-home"
 import { CommitteeHome } from "./committee-home"
 import type { EventKey } from "@/lib/db/schema"
-import type { RecapRow, AccountRow } from "@/lib/queries"
+import type { RecapRow, AccountRow, ActivityRow, ClassStat } from "@/lib/queries"
 
 type Codes = Record<string, { code: string; verifiedAt: Date | string | null }>
 
@@ -18,9 +19,11 @@ type Props = {
   committee: boolean
   recaps: Record<EventKey, RecapRow[]> | null
   accounts: AccountRow[] | null
+  activity?: ActivityRow[] | null
+  classStats?: ClassStat[] | null
 }
 
-export function AppRoot({ participant, codes, committee, recaps, accounts }: Props) {
+export function AppRoot({ participant, codes, committee, recaps, accounts, activity, classStats }: Props) {
   const [choice, setChoice] = useState<"none" | "peserta" | "panitia">("none")
   // Setelah login: tampilkan halaman utama dulu; dashboard dibuka lewat tombol.
   const [openDash, setOpenDash] = useState(false)
@@ -32,6 +35,9 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-col justify-center gap-8 text-center">
         <BrandHeader />
+        <div className="animate-rise mx-auto">
+          <LiveClock />
+        </div>
         <div className="animate-rise-2 mx-auto max-w-md">
           <span className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-[linear-gradient(135deg,var(--gold),var(--purple)_60%,var(--blue))] text-white shadow-xl shadow-[var(--purple)]/30">
             {isPanitia ? <ShieldCheck className="h-10 w-10" /> : <GraduationCap className="h-10 w-10" />}
@@ -73,7 +79,7 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
   }
 
   if (committee && recaps && accounts && openDash) {
-    return <CommitteeHome recaps={recaps} accounts={accounts} onExit={() => setOpenDash(false)} />
+    return <CommitteeHome recaps={recaps} accounts={accounts} activity={activity ?? undefined} classStats={classStats ?? undefined} onExit={() => setOpenDash(false)} />
   }
 
   if (choice === "peserta") return <PesertaAuth onBack={() => setChoice("none")} />
@@ -82,6 +88,10 @@ export function AppRoot({ participant, codes, committee, recaps, accounts }: Pro
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col justify-center gap-10">
+      {/* Jam real-time di pojok atas halaman depan */}
+      <div className="flex justify-center sm:justify-end">
+        <LiveClock />
+      </div>
       <div className="text-center sm:text-left">
         {/* Badge meriah */}
         <span className="animate-rise inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-xs font-semibold text-foreground/90 backdrop-blur">

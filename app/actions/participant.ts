@@ -11,6 +11,7 @@ import {
 } from "@/lib/session"
 import { KELAS_OPTIONS } from "@/lib/constants"
 import { revalidatePath } from "next/cache"
+import { logActivity } from "@/lib/queries"
 
 type ActionResult = { ok: boolean; error?: string }
 
@@ -145,6 +146,7 @@ export async function updateParticipantName(formData: FormData): Promise<ActionR
   if (nama.length > 60) return { ok: false, error: "Nama terlalu panjang." }
 
   await db.update(participants).set({ nama }).where(eq(participants.id, id))
+  logActivity(nama, "ganti-nama")
   revalidatePath("/")
   return { ok: true }
 }
@@ -177,6 +179,7 @@ export async function changePasswordSelf(formData: FormData): Promise<ActionResu
     .update(participants)
     .set({ passwordHash: hashPassword(newPassword), lastActiveAt: new Date() })
     .where(eq(participants.id, id))
+  logActivity(p.nama, "ganti-password", passLamaCocok ? "verifikasi: password lama" : "verifikasi: kode unik")
   revalidatePath("/")
   return { ok: true }
 }

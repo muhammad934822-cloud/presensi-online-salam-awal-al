@@ -33,6 +33,17 @@ export const attendance = pgTable(
   }),
 )
 
+// Tabel audit opsional (dibuat otomatis saat runtime oleh lib/db/migrate.ts).
+// Tidak dipakai oleh query lama; penulisan log dibungkus try/catch agar
+// kegagalan logging tidak pernah mengganggu alur utama presensi.
+export const activityLog = pgTable("activity_log", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  actor: text("actor").notNull(), // nama peserta / "PANITIA"
+  action: text("action").notNull(), // e.g. "verifikasi", "reset-password"
+  detail: text("detail"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
 export type Participant = typeof participants.$inferSelect
 export type Attendance = typeof attendance.$inferSelect
 

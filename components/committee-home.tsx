@@ -2,15 +2,15 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, ShieldCheck, ScanLine, Users, Activity, Home , Lightbulb} from "lucide-react"
+import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, ShieldCheck, ScanLine, Users, Activity, Home , Lightbulb, Clock, History } from "lucide-react"
 import { GlassCard } from "./ui-kit"
 import { VerifySubmenu } from "./committee/verify-submenu"
 import { RecapSubmenu } from "./committee/recap-submenu"
 import { AccountsSection } from "./committee/accounts-section"
-import { DashboardShell, type DashSection } from "./dashboard-shell"
+import { DashboardShell, LiveClock, type DashSection } from "./dashboard-shell"
 import { SettingsPanel } from "./settings-panel"
 import { EVENTS, EVENT_LABELS, type EventKey } from "@/lib/db/schema"
-import type { RecapRow, AccountRow } from "@/lib/queries"
+import type { RecapRow, AccountRow, ActivityRow, ClassStat } from "@/lib/queries"
 
 const ICONS: Record<EventKey, typeof GraduationCap> = {
   studium_generale: GraduationCap,
@@ -18,13 +18,24 @@ const ICONS: Record<EventKey, typeof GraduationCap> = {
   konsumsi: UtensilsCrossed,
 }
 
+/** Jam kegiatan — sinkron dengan validasi server (app/actions/participant.ts). */
+const DEADLINE: Record<EventKey, string> = {
+  studium_generale: "16.00",
+  mabit: "23.00",
+  konsumsi: "09.00",
+}
+
 export function CommitteeHome({
   recaps,
   accounts,
+  activity,
+  classStats,
   onExit,
 }: {
   recaps: Record<EventKey, RecapRow[]>
   accounts: AccountRow[]
+  activity?: ActivityRow[]
+  classStats?: ClassStat[]
   onExit?: () => void
 }) {
   const [section, setSection] = useState<DashSection>("beranda")
@@ -115,7 +126,10 @@ export function CommitteeHome({
               </span>
               <span className="relative">
                 <span className="block font-semibold text-foreground">{EVENT_LABELS[ev]}</span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">{count} terverifikasi</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  <Clock className="mr-1 inline h-3 w-3 -translate-y-px" aria-hidden="true" />
+                  {count} terverifikasi · s.d. {DEADLINE[ev]}
+                </span>
               </span>
               <span className="relative inline-flex items-center gap-1 text-xs font-semibold text-[var(--gold)] transition-all group-hover:gap-2">
                 Scan sekarang <ChevronRight className="h-3.5 w-3.5" />
@@ -129,6 +143,62 @@ export function CommitteeHome({
         <Lightbulb className="mr-1 inline h-3.5 w-3.5 -translate-y-px text-[var(--gold)]" aria-hidden="true" /> Buka menu <b>Presensi</b> di sidebar untuk scan QR & rekap per kegiatan, atau{" "}
         <b>Daftar Peserta</b> untuk mengelola akun & mereset password peserta.
       </p>
+
+      {/* Statistik kehadiran per kelas */}
+      {classStats && classStats.length > 0 && (
+        <GlassCard className="animate-rise-3 mt-5">
+          <div className="px-4 py-4">
+            <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+              <Users className="h-4 w-4 text-[var(--blue)]" /> Kehadiran per Kelas
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              {classStats.map((c) => {
+                const pct = c.total ? Math.round((c.hadir / c.total) * 100) : 0
+                return (
+                  <div key={c.kelas} className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5 transition hover:border-[var(--blue)]/40">
+                    <p className="truncate text-xs font-semibold text-foreground">{c.kelas}</p>
+                    <p className="font-serif text-lg font-bold tabular-nums text-foreground">
+                      {c.hadir}<span className="text-xs text-muted-foreground">/{c.total}</span>
+                    </p>
+                    <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-[linear-gradient(90deg,var(--blue),var(--purple))] transition-all duration-700"
+                        style={{ width: `${Math.max(pct, c.hadir > 0 ? 6 : 0)}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Riwayat aktivitas (audit trail) */}
+      {activity && activity.length > 0 && (
+        <GlassCard className="animate-rise-4 mt-5">
+          <div className="px-4 py-4">
+            <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+              <History className="h-4 w-4 text-[var(--purple)]" /> Aktivitas Terbaru
+            </p>
+            <ul className="grid gap-1.5">
+              {activity.slice(0, 8).map((a) => (
+                <li key={a.id} className="flex items-baseline justify-between gap-3 rounded-xl bg-white/[0.04] px-3 py-1.5 text-xs">
+                  <span className="min-w-0 truncate text-foreground/85">
+                    <b className="font-semibold">{a.actor}</b>
+                    <span className="mx-1.5 text-muted-foreground">·</span>
+                    <span className="capitalize text-muted-foreground">{a.action.replace(/-/g, " ")}</span>
+                    {a.detail && <span className="ml-1.5 text-muted-foreground/80">({a.detail})</span>}
+                  </span>
+                  <span className="shrink-0 tabular-nums text-muted-foreground">
+                    {new Date(a.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </GlassCard>
+      )}
     </div>
   )
 
@@ -245,6 +315,7 @@ export function CommitteeHome({
                   {accounts.length} akun · {totalVerified}/{totalShown || 0} kehadiran tervalidasi
                 </p>
               </div>
+              <LiveClock className="hidden shrink-0 md:inline-flex" />
               {onExit && (
                 <button
                   onClick={onExit}

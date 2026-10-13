@@ -11,6 +11,8 @@ import {
 } from "@/lib/session"
 import { COMMITTEE_PASSWORD } from "@/lib/constants"
 import { revalidatePath } from "next/cache"
+import { logActivity } from "@/lib/queries"
+import { isPresenseClosed, PRESENSE_DEADLINE } from "@/lib/deadline"
 
 type ActionResult = { ok: boolean; error?: string }
 
@@ -37,6 +39,10 @@ export async function verifyCode(
 
   const code = rawCode.replace(/\D/g, "").trim()
   if (code.length !== 16) return { ok: false, error: "Kode harus 16 digit angka." }
+
+  // Batas waktu presensi per kegiatan (bisa diubah di app/actions/participant.ts).
+  if (isPresenseClosed(event))
+    return { ok: false, error: `Presensi kegiatan ini sudah ditutup (batas ${PRESENSE_DEADLINE[event]} WITA). Hubungi koordinator untuk koreksi manual.` }
 
   const [record] = await db
     .select()
@@ -70,6 +76,7 @@ export async function verifyCode(
     .set({ verifiedAt: new Date() })
     .where(eq(attendance.id, record.id))
 
+  logActivity(p.nama, "verifikasi", `${event} · No. ${p.nomorPresensi}`)
   revalidatePath("/")
   return {
     ok: true,
@@ -97,14 +104,21 @@ export async function unverifyAttendance(attendanceId: string): Promise<ActionRe
     .update(attendance)
     .set({ verifiedAt: null })
     .where(eq(attendance.id, rec.id))
+  logActivity("PANITIA", "undo-verifikasi", `attendance ${rec.id}`)
   revalidatePath("/")
   return { ok: true }
 }
 
 export async function deleteParticipant(participantId: string): Promise<ActionResult> {
   if (!(await isCommittee())) return { ok: false, error: "Tidak diizinkan." }
+  const [dp] = await db
+    .select({ nama: participants.nama, kelas: participants.kelas, nomor: participants.nomorPresensi })
+    .from(participants)
+    .where(eq(participants.id, participantId))
+    .limit(1)
   await db.delete(attendance).where(eq(attendance.participantId, participantId))
   await db.delete(participants).where(eq(participants.id, participantId))
+  if (dp) logActivity(dp.nama, "hapus-akun", `${dp.kelas} · No. ${dp.nomor}`)
   revalidatePath("/")
   return { ok: true }
 }
@@ -128,6 +142,7 @@ export async function resetParticipantPassword(
     .update(participants)
     .set({ passwordHash: hashPassword("12345678") })
     .where(eq(participants.id, participantId))
+  logActivity("PANITIA", "reset-password", `peserta ${participantId}`)
   revalidatePath("/")
   return { ok: true }
 }
