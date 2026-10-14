@@ -582,7 +582,8 @@ export function CommitteeHome({
             <div className="flex min-w-0 items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="flex items-center gap-2 truncate font-serif text-lg font-semibold text-foreground">
-                  <ShieldCheck className="h-5 w-5 shrink-0 text-[var(--gold)]" /> Dashboard Panitia
+                  <ShieldCheck className="h-5 w-5 shrink-0 text-[var(--gold)]" />
+                  <span className="hidden sm:inline">Dashboard Panitia</span>
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {accounts.length} akun · {totalVerified}/{totalShown || 0} kehadiran tervalidasi
