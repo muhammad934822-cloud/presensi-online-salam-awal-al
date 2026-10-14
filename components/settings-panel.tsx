@@ -27,9 +27,12 @@ import { isSoundOn, setSoundOn, playSuccess, playClick } from "@/lib/sound"
 export function SettingsPanel({
   role,
   nama,
+  dryRun = false,
 }: {
   role: "peserta" | "panitia"
   nama?: string
+  /** Mode ujicoba: form tampil lengkap & tervalidasi, tapi TIDAK menyimpan apa pun. */
+  dryRun?: boolean
 }) {
   const { theme, toggleTheme } = useTheme()
   const router = useRouter()
@@ -52,6 +55,12 @@ export function SettingsPanel({
   function saveName() {
     if (!newName.trim()) return
     setNameMsg(null)
+    if (dryRun) {
+      // Mode ujicoba: validasi format saja, tidak menulis ke database.
+      setNameMsg({ ok: true, text: "Ujicoba: nama akan tersimpan otomatis jadi huruf kapital" })
+      setNewName("")
+      return
+    }
     startTransition(async () => {
       const fd = new FormData()
       fd.set("nama", newName)
@@ -66,6 +75,22 @@ export function SettingsPanel({
 
   function savePassword() {
     setPassMsg(null)
+    if (dryRun) {
+      // Mode ujicoba: cek aturan form saja, tidak menyentuh data asli.
+      if (!oldPass && !kodeUnik) {
+        setPassMsg({ ok: false, text: "Isi password lama atau kode unik (salah satu)." })
+        return
+      }
+      if (newPass.length < 6) {
+        setPassMsg({ ok: false, text: "Password baru minimal 6 karakter." })
+        return
+      }
+      setPassMsg({ ok: true, text: "Ujicoba: verifikasi lolos & password akan diganti" })
+      setOldPass("")
+      setKodeUnik("")
+      setNewPass("")
+      return
+    }
     startTransition(async () => {
       const fd = new FormData()
       fd.set("oldPassword", oldPass)
@@ -246,7 +271,8 @@ export function SettingsPanel({
         </div>
       </GlassCard>
 
-      {/* Keluar */}
+      {/* Keluar — disembunyikan di mode ujicoba agar panitia tidak logout dari akun aslinya */}
+      {!dryRun && (
       <GhostButton
         onClick={() =>
           startTransition(async () => {
@@ -265,6 +291,7 @@ export function SettingsPanel({
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />} Keluar dari akun
       </GhostButton>
+      )}
     </div>
   )
 }

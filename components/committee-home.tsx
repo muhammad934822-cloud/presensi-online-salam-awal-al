@@ -1,16 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, ShieldCheck, ScanLine, Users, Activity, Home , Lightbulb, History, BellRing, FlaskConical, QrCode } from "lucide-react"
 import { GlassCard } from "./ui-kit"
 import { VerifySubmenu } from "./committee/verify-submenu"
 import { RecapSubmenu } from "./committee/recap-submenu"
 import { AccountsSection } from "./committee/accounts-section"
 import { ParticipantHome } from "./participant-home"
+import { PesertaAuth } from "./peserta-auth"
 import { generate16DigitCode } from "@/lib/crypto"
 import { DashboardShell, type DashSection } from "./dashboard-shell"
 import { SettingsPanel } from "./settings-panel"
+
 import { ActivityList } from "./activity-list"
 import { EVENTS, EVENT_LABELS, type EventKey } from "@/lib/db/schema"
 import type { RecapRow, AccountRow, ActivityRow, ClassStat } from "@/lib/queries"
@@ -128,10 +131,28 @@ export function CommitteeHome({
                       {h.kode}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {h.kelas} · No. {h.nomor} · HP {h.phone.slice(0, 4)}****{h.phone.slice(-4)} ·{" "}
+                  {/* Data berkelompok: Nama | Kelas | Nomor | Token | WA (tanpa sensor utk verifikasi) */}
+                  <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs sm:grid-cols-4">
+                    <div className="min-w-0">
+                      <dt className="text-[10px] uppercase tracking-wide text-muted-foreground/70">Kelas</dt>
+                      <dd className="truncate font-semibold text-foreground/90">{h.kelas}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-[10px] uppercase tracking-wide text-muted-foreground/70">No. Presensi</dt>
+                      <dd className="font-semibold tabular-nums text-foreground/90">{h.nomor}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-[10px] uppercase tracking-wide text-muted-foreground/70">Token</dt>
+                      <dd className="truncate font-mono font-semibold tracking-wider text-[var(--gold)]">{h.kode}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-[10px] uppercase tracking-wide text-muted-foreground/70">Nomor WA</dt>
+                      <dd className="truncate font-semibold tabular-nums text-foreground/90">{h.phone}</dd>
+                    </div>
+                  </dl>
+                  <p className="mt-1.5 text-xs text-muted-foreground">
                     <span className={overdue ? "font-semibold text-[var(--gold)]" : ""}>
-                      menunggu {waited} mnt{overdue ? " — melewati 60 menit" : ""}
+                      Menunggu {waited} mnt{overdue ? " — melewati batas 60 menit" : ""}
                     </span>
                   </p>
                   {/* Aksi di bawah (bukan di samping) */}
@@ -395,6 +416,7 @@ export function CommitteeHome({
   const [ujicobaNama, setUjicobaNama] = useState("CONTOH PESERTA")
   const [ujicobaKelas, setUjicobaKelas] = useState("XII IPA 1")
   const [ujicobaNomor, setUjicobaNomor] = useState(1)
+  const [ujiTab, setUjiTab] = useState<"dashboard" | "pengaturan" | "login">("dashboard")
 
   const ujicoba = (
     <div className="grid gap-4">
@@ -406,19 +428,61 @@ export function CommitteeHome({
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground">Mode Ujicoba — tampilan akun peserta</p>
             <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-              Pratinjau persis seperti yang dilihat peserta (bukan data asli). QR bersifat sementara dan tidak tercatat ke sistem. Tidak ada tombol Keluar karena kamu tetap di dashboard panitia.
+              Pratinjau persis seperti yang dilihat peserta, termasuk menu Pengaturan &amp; alur Lupa Password di halaman login. QR bersifat sementara dan tidak tercatat ke sistem. Tidak ada tombol Keluar karena kamu tetap di dashboard panitia.
             </p>
           </div>
         </div>
       </GlassCard>
-      <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/[0.02]">
-        <ParticipantHome
-          nama={ujicobaNama}
-          kelas={ujicobaKelas}
-          nomorPresensi={ujicobaNomor}
-          codes={ujicobaCodes}
-        />
+
+      {/* Navigasi bagian mana yang mau diuji */}
+      <div className="flex flex-wrap gap-2">
+        {([
+          ["dashboard", "Dashboard Peserta"],
+          ["pengaturan", "Pengaturan & Reset"],
+          ["login", "Halaman Login / Lupa Password"],
+        ] as const).map(([k, label]) => (
+          <button
+            key={k}
+            onClick={() => setUjiTab(k)}
+            className={
+              "lift rounded-xl border px-3 py-1.5 text-xs font-semibold transition active:scale-95 " +
+              (ujiTab === k
+                ? "border-transparent bg-gradient-to-r from-[var(--purple)] to-[var(--blue)] text-white shadow-md"
+                : "border-[var(--line)] bg-white/[0.04] text-muted-foreground hover:border-[var(--purple)]/50")
+            }
+          >
+            {label}
+          </button>
+        ))}
       </div>
+
+      {ujiTab === "dashboard" && (
+        <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/[0.02]">
+          <ParticipantHome
+            nama={ujicobaNama}
+            kelas={ujicobaKelas}
+            nomorPresensi={ujicobaNomor}
+            codes={ujicobaCodes}
+          />
+        </div>
+      )}
+
+      {ujiTab === "pengaturan" && (
+        <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/[0.02] p-3 sm:p-4">
+          <p className="mb-3 inline-flex items-center gap-1.5 rounded-lg bg-[var(--purple)]/15 px-2.5 py-1 text-[11px] font-semibold text-[var(--purple)]">
+            <FlaskConical className="h-3.5 w-3.5" /> Semua aksi di sini aman — hanya simulasi, data asli tidak berubah
+          </p>
+          <SettingsPanel role="peserta" nama={ujicobaNama} dryRun />
+        </div>
+      )}
+
+      {ujiTab === "login" && (
+        <div className="overflow-hidden rounded-2xl border border-dashed border-[var(--line)] bg-white/[0.02]">
+          <Suspense fallback={<div className="h-96 animate-pulse bg-white/[0.03]" />}>
+            <PesertaAuth onBack={() => setUjiTab("dashboard")} />
+          </Suspense>
+        </div>
+      )}
     </div>
   )
 
