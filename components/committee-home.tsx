@@ -9,7 +9,7 @@ import { VerifySubmenu } from "./committee/verify-submenu"
 import { RecapSubmenu } from "./committee/recap-submenu"
 import { AccountsSection } from "./committee/accounts-section"
 import { ParticipantHome } from "./participant-home"
-import { PesertaAuth } from "./peserta-auth"
+import { PesertaAuth, UjiCobaContext } from "./peserta-auth"
 import { generate16DigitCode } from "@/lib/crypto"
 import { DashboardShell, type DashSection } from "./dashboard-shell"
 import { SettingsPanel } from "./settings-panel"
@@ -479,7 +479,9 @@ export function CommitteeHome({
       {ujiTab === "login" && (
         <div className="overflow-hidden rounded-2xl border border-dashed border-[var(--line)] bg-white/[0.02]">
           <Suspense fallback={<div className="h-96 animate-pulse bg-white/[0.03]" />}>
-            <PesertaAuth onBack={() => setUjiTab("dashboard")} />
+            <UjiCobaContext.Provider value={true}>
+              <PesertaAuth onBack={() => setUjiTab("dashboard")} />
+            </UjiCobaContext.Provider>
           </Suspense>
         </div>
       )}

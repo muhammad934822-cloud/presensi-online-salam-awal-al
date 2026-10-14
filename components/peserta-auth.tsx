@@ -1,7 +1,12 @@
 "use client"
 
-import { useEffect, useRef, useState, useTransition } from "react"
+import { createContext, useContext, useEffect, useRef, useState, useTransition } from "react"
 import Link from "next/link"
+
+/* Mode Ujicoba: bila true, SEMUA aksi peserta (daftar/login/reset/ajukan/tinjau/batalkan)
+   hanya simulasi — tidak ada satu pun query tulis/baca ke database. Panitia bisa menguji
+   alur lengkap tanpa password akun asli ikut ter-reset. */
+export const UjiCobaContext = createContext(false)
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
@@ -172,7 +177,10 @@ function HelpResult({
 }
 
 /** Polling status untuk mode "review" (cek via kode tinjau) tiap 30 detik. */
+const UJI_OK = { ok: true } as const
+
 export function PesertaAuth({ onBack }: { onBack: () => void }) {
+  const ujiCoba = useContext(UjiCobaContext)
   const [mode, setMode] = useState<Mode>("choice")
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -215,6 +223,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
     if (!helpSent || mode !== "help") return
     let cancelled = false
     const iv = setInterval(async () => {
+      if (ujiCoba) return // mode ujicoba: tanpa query database
       try {
         const res = await checkResetHelpByKode(helpSent.kode)
         if (!cancelled) applyStatus(res, (h) => setHelpSent(h))
@@ -228,6 +237,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
     if (!reviewResult || mode !== "help" || helpBranch !== "tinjau") return
     let cancelled = false
     const iv = setInterval(async () => {
+      if (ujiCoba) return // mode ujicoba: tanpa query database
       try {
         const res = await checkResetHelpByKode(reviewResult.kode)
         if (!cancelled) applyStatus(res, (h) => setReviewResult(h))
@@ -240,6 +250,11 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
   function handle(action: (fd: FormData) => Promise<{ ok: boolean; error?: string }>, form: HTMLFormElement, onOk?: () => void) {
     setError(null)
     setNotice(null)
+    if (ujiCoba) {
+      // Mode ujicoba panitia: tampilkan feedback simulasi, JANGAN sentuh database.
+      setNotice("✅ Simulasi berhasil — di mode ujicoba tidak ada data asli yang diubah.")
+      return
+    }
     const fd = new FormData(form)
     startTransition(async () => {
       const res = await action(fd)
@@ -543,6 +558,18 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
                 setError(null)
                 const fd = new FormData(form)
                 startTransition(async () => {
+                  if (ujiCoba) {
+                    // Mode ujicoba: simulasi permintaan terkirim — TIDAK ada query ke DB.
+                    const kodeUji = Array.from({ length: 6 }, () => "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)]).join("")
+                    lastReviewedStatus.current = "pending"
+                    setHelpSent({
+                      kode: kodeUji,
+                      maskedPhone: String(fd.get("phone") ?? "").replace(/^(\d{4})\d*(\d{4})$/, "$1****$2"),
+                      waitedMinutes: 0,
+                      status: "pending",
+                    })
+                    return
+                  }
                   const res = await requestResetHelp(fd)
                   if (res.ok) {
                     lastReviewedStatus.current = res.status ?? "pending"
@@ -630,6 +657,12 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
                   type="button"
                   onClick={async () => {
                     if (!confirm("Batalkan permintaan reset ini?")) return
+                    if (ujiCoba) {
+                      setReviewResult(null)
+                      setNotice("Simulasi: permintaan dibatalkan.")
+                      setHelpBranch(null)
+                      return
+                    }
                     const res = await cancelResetHelpByKode(reviewResult.kode)
                     if (res.ok) {
                       setReviewResult(null)
@@ -660,6 +693,12 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
                 e.preventDefault()
                 setError(null)
                 startTransition(async () => {
+                  if (ujiCoba) {
+                    // Mode ujicoba: hasil tinjau disimulasikan — tanpa query DB.
+                    lastReviewedStatus.current = "pending"
+                    setReviewResult({ kode: reviewKode.toUpperCase(), maskedPhone: "0812****3456", waitedMinutes: 5, status: "pending" })
+                    return
+                  }
                   const res = await checkResetHelpByKode(reviewKode)
                   if (res.ok && res.found) {
                     lastReviewedStatus.current = res.status ?? "pending"
