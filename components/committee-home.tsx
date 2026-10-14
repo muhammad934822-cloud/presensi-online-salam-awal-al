@@ -12,8 +12,8 @@ import { SettingsPanel } from "./settings-panel"
 import { ActivityList } from "./activity-list"
 import { EVENTS, EVENT_LABELS, type EventKey } from "@/lib/db/schema"
 import type { RecapRow, AccountRow, ActivityRow, ClassStat } from "@/lib/queries"
-import { getPendingResetHelp, resetHelpByClassNomor, type HelpRequest } from "@/app/actions/committee"
-import { cancelResetHelp } from "@/app/actions/participant"
+import { getPendingResetHelp, resetHelpByCode, deleteHelpByCode, type HelpRequest } from "@/app/actions/committee"
+import { playIncoming } from "@/lib/sound"
 import { useEffect, useRef } from "react"
 
 const ICONS: Record<EventKey, typeof GraduationCap> = {
@@ -45,12 +45,17 @@ export function CommitteeHome({
   const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([])
   const [busyHelp, setBusyHelp] = useState<string | null>(null)
   const helpTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const prevCount = useRef(0)
 
   async function refreshHelp() {
     try {
-      setHelpRequests(await getPendingResetHelp())
+      const list = await getPendingResetHelp()
+      // Notifikasi suara saat permintaan BARU masuk (bukan saat load awal).
+      if (prevCount.current > 0 && list.length > prevCount.current) playIncoming()
+      prevCount.current = list.length
+      setHelpRequests(list)
     } catch {
-      /* diamlah — jangan jatuhkan dashboard karena gagal ambil tinjauan */
+      /* diam — jangan jatuhkan dashboard karena gagal ambil tinjauan */
     }
   }
   useEffect(() => {
@@ -60,13 +65,10 @@ export function CommitteeHome({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function handleHelpAction(kelas: string, nomor: number, kind: "reset" | "ignore") {
-    const key = `${kelas}-${nomor}`
-    setBusyHelp(key)
+  async function handleHelpAction(kode: string, kind: "reset" | "delete") {
+    setBusyHelp(kode)
     try {
-      const res = kind === "reset"
-        ? await resetHelpByClassNomor(kelas, nomor)
-        : await cancelResetHelp(kelas, nomor)
+      const res = kind === "reset" ? await resetHelpByCode(kode) : await deleteHelpByCode(kode)
       if (!res.ok && res.error) alert(res.error)
     } finally {
       setBusyHelp(null)
@@ -112,37 +114,41 @@ export function CommitteeHome({
           </div>
           <ul className="divide-y divide-[var(--line)]">
             {helpRequests.map((h) => {
-              const key = `${h.kelas}-${h.nomor}`
+              const busy = busyHelp === h.kode
               const waited = Math.max(0, Math.floor((Date.now() - h.createdAt.getTime()) / 60_000))
               const overdue = waited >= 60
-              const busy = busyHelp === key
               return (
-                <li key={key} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 transition-colors hover:bg-white/[0.04]">
-                  <span className="min-w-0 flex-1">
-                    <span className="block break-words text-sm font-semibold text-foreground">{h.nama}</span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                      {h.kelas} · No. {h.nomor} · HP {h.phone.slice(0, 4)}****{h.phone.slice(-4)} ·{" "}
-                      <span className={overdue ? "font-semibold text-[var(--gold)]" : ""}>
-                        menunggu {waited} mnt{overdue ? " ⏰" : ""}
-                      </span>
+                <li key={h.kode} className="px-4 py-3 transition-colors hover:bg-white/[0.04]">
+                  {/* Baris identitas */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="min-w-0 flex-1 break-words text-sm font-semibold text-foreground">{h.nama}</span>
+                    <span className="shrink-0 rounded-lg border border-[var(--line)] bg-white/[0.05] px-2 py-0.5 font-mono text-[11px] font-bold tracking-[0.18em] text-[var(--gold)]">
+                      {h.kode}
                     </span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-2">
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {h.kelas} · No. {h.nomor} · HP {h.phone.slice(0, 4)}****{h.phone.slice(-4)} ·{" "}
+                    <span className={overdue ? "font-semibold text-[var(--gold)]" : ""}>
+                      menunggu {waited} mnt{overdue ? " — melewati 60 menit" : ""}
+                    </span>
+                  </p>
+                  {/* Aksi di bawah (bukan di samping) */}
+                  <div className="mt-2.5 flex flex-wrap items-center justify-end gap-2">
                     <button
-                      onClick={() => handleHelpAction(h.kelas, h.nomor, "reset")}
+                      onClick={() => handleHelpAction(h.kode, "delete")}
                       disabled={busy}
-                      className="lift rounded-xl bg-gradient-to-r from-[var(--gold)] to-[var(--purple)] px-3 py-1.5 text-xs font-bold text-white shadow-md transition disabled:opacity-50"
+                      className="rounded-xl border border-[var(--line)] px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-destructive/40 hover:text-destructive disabled:opacity-50"
+                    >
+                      Hapus
+                    </button>
+                    <button
+                      onClick={() => handleHelpAction(h.kode, "reset")}
+                      disabled={busy}
+                      className="lift rounded-xl bg-gradient-to-r from-[var(--gold)] to-[var(--purple)] px-3.5 py-1.5 text-xs font-bold text-white shadow-md transition disabled:opacity-50"
                     >
                       {busy ? "Memproses…" : "Reset → 12345678"}
                     </button>
-                    <button
-                      onClick={() => handleHelpAction(h.kelas, h.nomor, "ignore")}
-                      disabled={busy}
-                      className="rounded-xl border border-[var(--line)] px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground disabled:opacity-50"
-                    >
-                      Abaikan
-                    </button>
-                  </span>
+                  </div>
                 </li>
               )
             })}

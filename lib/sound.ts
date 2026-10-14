@@ -104,3 +104,27 @@ export function playError() {
 export function playClick() {
   playTones([{ freq: 880, start: 0, dur: 0.09, gain: 0.1 }])
 }
+
+/** Ada permintaan reset baru masuk (panitia) — dua nada lonceng lembut ke atas. */
+export function playIncoming() {
+  playTones([
+    { freq: 659.25, start: 0, dur: 0.14, gain: 0.13, type: "triangle" },
+    { freq: 880, start: 0.14, dur: 0.22, gain: 0.13, type: "triangle" },
+  ])
+}
+
+/** Keputusan permintaan keluar (peserta): disetujui — triad naik singkat. */
+export function playApproved() {
+  playTones([
+    { freq: 523.25, start: 0, dur: 0.12, gain: 0.14 },
+    { freq: 783.99, start: 0.12, dur: 0.22, gain: 0.16 },
+  ])
+}
+
+/** Keputusan permintaan keluar (peserta): ditolak/dihapus — turun tegas. */
+export function playRejected() {
+  playTones([
+    { freq: 415.3, start: 0, dur: 0.14, gain: 0.13, type: "triangle" },
+    { freq: 311.13, start: 0.14, dur: 0.24, gain: 0.13, type: "triangle" },
+  ])
+}

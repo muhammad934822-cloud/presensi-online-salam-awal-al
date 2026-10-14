@@ -16,7 +16,14 @@ import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/queries"
 import { ensureActivityLog } from "@/lib/db/migrate"
 
-type ActionResult = { ok: boolean; error?: string; maskedPhone?: string; waitedMinutes?: number }
+type ActionResult = {
+  ok: boolean
+  error?: string
+  maskedPhone?: string
+  waitedMinutes?: number
+  kodeTinjau?: string
+  status?: "pending" | "approved" | "ignored"
+}
 
 function validKelas(kelas: string) {
   return (KELAS_OPTIONS as readonly string[]).includes(kelas)
@@ -134,6 +141,9 @@ export async function resetPasswordWithKode(formData: FormData): Promise<ActionR
     .set({ passwordHash: hashPassword(newPassword) })
     .where(eq(participants.id, p.id))
 
+  // Sinyal "sudah selesai" utk permintaan bantu (deteksi otomatis di sisi panitia).
+  logActivity(p.nama, "ganti-password", `reset-mandiri:${p.id}`)
+  revalidatePath("/")
   return { ok: true }
 }
 
@@ -143,38 +153,81 @@ export async function resetPasswordWithKode(formData: FormData): Promise<ActionR
 /* berformat khusus — TIDAK menambah tabel/kolom DB apa pun.           */
 /* ------------------------------------------------------------------ */
 
+/* Format record di activity_log (tabel SUDAH ADA — tanpa skema baru):
+   permintaan : detail = "RESET-BANTU::<kode>::<nama>::<kelas>::<nomor>::<hp>"
+   keputusan  : action = "reset-bantu-approved" | "reset-bantu-ignored"
+                detail = "RESET-DECISION::<kode>::<ket>"
+   <kode> adalah kode tinjau 6 karakter (huruf besar + angka) yang dipakai
+   peserta untuk memantau status permintaannya lewat menu "Tinjau Permintaan". */
 const HELP_PREFIX = "RESET-BANTU::"
+const DECISION_PREFIX = "RESET-DECISION::"
 const PHONE_RE = /^08\d{8,12}$/
 
 function maskPhone(phone: string): string {
-  // 089525385080 -> 0895****5080
+  // 08xx…xxxx -> 08xx****xxxx (disembunyikan sebagian)
   if (phone.length <= 8) return `${phone.slice(0, 3)}****`
   return `${phone.slice(0, 4)}****${phone.slice(-4)}`
 }
 
-type HelpRecord = { nama: string; kelas: string; nomor: number; phone: string; createdAt: Date }
+/** Kode tinjau 6 karakter acak (tanpa huruf/angka yang mudah tertukar). */
+function generateKodeTinjau(): string {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+  let out = ""
+  for (let i = 0; i < 6; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)]
+  return out
+}
 
-async function readHelpRecords(): Promise<HelpRecord[]> {
+type HelpRecord = {
+  kode: string
+  nama: string
+  kelas: string
+  nomor: number
+  phone: string
+  createdAt: Date
+  status: "pending" | "approved" | "ignored"
+  decidedAt?: Date
+  note?: string
+}
+
+async function readAllHelpRecords(): Promise<HelpRecord[]> {
   await ensureActivityLog()
   const rows = await db
     .select()
     .from(activityLog)
-    .where(sql`${activityLog.detail} LIKE ${HELP_PREFIX + "%"}`)
+    .where(sql`${activityLog.detail} LIKE ${HELP_PREFIX + "%"} OR ${activityLog.detail} LIKE ${DECISION_PREFIX + "%"}`)
     .orderBy(desc(activityLog.createdAt))
-    .limit(200)
+    .limit(500)
+
+  // Kumpulkan keputusan per kode dulu (bisa lebih dari satu; ambil terbaru).
+  const decisions = new Map<string, { action: string; at: Date; note: string }>()
+  for (const r of rows) {
+    if (!r.detail?.startsWith(DECISION_PREFIX)) continue
+    const [kode, ...rest] = r.detail.slice(DECISION_PREFIX.length).split("::")
+    if (!kode) continue
+    if (!decisions.has(kode)) decisions.set(kode, { action: r.action, at: r.createdAt, note: rest.join("::") })
+  }
 
   const seen = new Set<string>()
   const out: HelpRecord[] = []
   for (const r of rows) {
-    if (r.action === "reset-bantu-dibatalkan") continue
     if (!r.detail?.startsWith(HELP_PREFIX)) continue
-    const body = r.detail.slice(HELP_PREFIX.length)
-    const [nama, kelas, nomor, phone] = body.split("::")
-    if (!nama || !kelas || !nomor || !phone) continue
+    const [kode, nama, kelas, nomor, phone] = r.detail.slice(HELP_PREFIX.length).split("::")
+    if (!kode || !nama || !kelas || !nomor || !phone) continue
     const key = `${kelas}-${nomor}`
     if (seen.has(key)) continue // satu permintaan aktif per akun (yang terbaru)
     seen.add(key)
-    out.push({ nama, kelas, nomor: Number(nomor), phone, createdAt: r.createdAt })
+    const dec = decisions.get(kode)
+    out.push({
+      kode,
+      nama,
+      kelas,
+      nomor: Number(nomor),
+      phone,
+      createdAt: r.createdAt,
+      status: dec ? (dec.action === "reset-bantu-approved" ? "approved" : "ignored") : "pending",
+      decidedAt: dec?.at,
+      note: dec?.note,
+    })
   }
   return out
 }
@@ -189,7 +242,7 @@ export async function requestResetHelp(formData: FormData): Promise<ActionResult
   if (!Number.isInteger(nomorPresensi))
     return { ok: false, error: "Nomor presensi tidak valid." }
   if (!PHONE_RE.test(phone))
-    return { ok: false, error: "Nomor HP tidak valid. Contoh: 089525385080." }
+    return { ok: false, error: "Nomor HP tidak valid. Contoh: 08xxxxxxxxxx." }
 
   const [p] = await db
     .select({ id: participants.id, nama: participants.nama })
@@ -198,55 +251,64 @@ export async function requestResetHelp(formData: FormData): Promise<ActionResult
     .limit(1)
   if (!p) return { ok: false, error: "Akun tidak ditemukan. Periksa kelas & nomor presensi." }
 
-  const existing = await readHelpRecords()
+  const existing = await readAllHelpRecords()
   const active = existing.find((h) => h.kelas === kelas && h.nomor === nomorPresensi)
   if (active) {
     return {
       ok: true,
+      kodeTinjau: active.kode,
       maskedPhone: maskPhone(active.phone),
       waitedMinutes: Math.floor((Date.now() - active.createdAt.getTime()) / 60000),
+      status: active.status,
     }
   }
 
+  const kode = generateKodeTinjau()
   await db.insert(activityLog).values({
     actor: p.nama,
     action: "reset-bantu",
-    detail: `${HELP_PREFIX}${p.nama}::${kelas}::${nomorPresensi}::${phone}`,
+    detail: `${HELP_PREFIX}${kode}::${p.nama}::${kelas}::${nomorPresensi}::${phone}`,
   })
-  logActivity(p.nama, "permintaan-reset-bantu", `${kelas}/${nomorPresensi}`)
   revalidatePath("/")
   return {
     ok: true,
+    kodeTinjau: kode,
     maskedPhone: maskPhone(phone),
     waitedMinutes: 0,
+    status: "pending",
   }
 }
 
-// Peserta mengecek status permintaannya sendiri (untuk indikator proses).
-export async function checkResetHelpStatus(formData: FormData): Promise<ActionResult & { found?: boolean }> {
-  const kelas = String(formData.get("kelas") ?? "").trim()
-  const nomorPresensi = Number(formData.get("nomorPresensi"))
-  if (!validKelas(kelas) || !Number.isInteger(nomorPresensi))
-    return { ok: false, error: "Kelas/nomor tidak valid." }
-  const records = await readHelpRecords()
-  const mine = records.find((h) => h.kelas === kelas && h.nomor === nomorPresensi)
-  if (!mine) return { ok: true, found: false }
+// Peserta mengecek status permintaan lewat KODE TINJAU (menu "Tinjau Permintaan").
+export async function checkResetHelpByKode(kodeTinjauRaw: string): Promise<ActionResult & { found?: boolean }> {
+  const kode = kodeTinjauRaw.trim().toUpperCase().replace(/[^A-Z0-9]/g, "")
+  if (kode.length !== 6) return { ok: false, error: "Kode tinjau harus 6 karakter (contoh: A7B2C9)." }
+  const records = await readAllHelpRecords()
+  const mine = records.find((h) => h.kode === kode)
+  if (!mine) return { ok: true, found: false, error: "Kode tidak ditemukan. Pastikan kode tinjau kamu benar." }
   return {
     ok: true,
     found: true,
+    kodeTinjau: mine.kode,
     maskedPhone: maskPhone(mine.phone),
     waitedMinutes: Math.max(0, Math.floor((Date.now() - mine.createdAt.getTime()) / 60000)),
+    status: mine.status,
   }
 }
 
-// Panitia membatalkan permintaan yang sudah diproses/manual.
-export async function cancelResetHelp(kelas: string, nomorPresensi: number): Promise<ActionResult> {
-  if (!(await isCommittee())) return { ok: false, error: "Tidak diizinkan." }
+// Peserta membatalkan permintaannya sendiri lewat kode tinjau.
+export async function cancelResetHelpByKode(kodeTinjauRaw: string): Promise<ActionResult> {
+  const kode = kodeTinjauRaw.trim().toUpperCase().replace(/[^A-Z0-9]/g, "")
+  if (kode.length !== 6) return { ok: false, error: "Kode tinjau harus 6 karakter." }
+  const records = await readAllHelpRecords()
+  const mine = records.find((h) => h.kode === kode)
+  if (!mine) return { ok: false, error: "Kode tidak ditemukan." }
+  if (mine.status !== "pending") return { ok: false, error: "Permintaan sudah diproses dan tidak bisa dibatalkan." }
   await ensureActivityLog()
   await db.insert(activityLog).values({
-    actor: "PANITIA",
-    action: "reset-bantu-dibatalkan",
-    detail: `${HELP_PREFIX}${kelas}::${nomorPresensi}`,
+    actor: mine.nama,
+    action: "reset-bantu-ignored",
+    detail: `${DECISION_PREFIX}${kode}::dibatalkan-peserta`,
   })
   revalidatePath("/")
   return { ok: true }
@@ -300,7 +362,8 @@ export async function changePasswordSelf(formData: FormData): Promise<ActionResu
     .update(participants)
     .set({ passwordHash: hashPassword(newPassword), lastActiveAt: new Date() })
     .where(eq(participants.id, id))
-  logActivity(p.nama, "ganti-password", passLamaCocok ? "verifikasi: password lama" : "verifikasi: kode unik")
+  // Sertakan id peserta → dipakai deteksi otomatis permintaan bantu panitia.
+  logActivity(p.nama, "ganti-password", `${passLamaCocok ? "verifikasi: password lama" : "verifikasi: kode unik"} · ${id}`)
   revalidatePath("/")
   return { ok: true }
 }

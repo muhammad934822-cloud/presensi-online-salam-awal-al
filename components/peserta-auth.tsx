@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useTransition } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
@@ -14,6 +15,12 @@ import {
   Phone,
   Inbox,
   CheckCircle2,
+  Eye,
+  ListChecks,
+  Copy,
+  PhoneCall,
+  Clock3,
+  XCircle,
 } from "lucide-react"
 import { GlassCard, TextField, SelectField, GradientButton, GhostButton } from "./ui-kit"
 import { KELAS_OPTIONS, NOMOR_PRESENSI_OPTIONS } from "@/lib/constants"
@@ -22,53 +29,142 @@ import {
   loginParticipant,
   resetPasswordWithKode,
   requestResetHelp,
-  checkResetHelpStatus,
+  checkResetHelpByKode,
+  cancelResetHelpByKode,
 } from "@/app/actions/participant"
+import { playApproved, playRejected } from "@/lib/sound"
 
-type Mode = "choice" | "signup" | "login" | "reset" | "help"
+type Mode = "choice" | "signup" | "login" | "reset" | "help" | "review"
 
 const MODE_TITLES: Record<Mode, { title: string; subtitle: string }> = {
   choice: { title: "Peserta", subtitle: "Pilih aksi untuk melanjutkan" },
   signup: { title: "Daftar Akun", subtitle: "Lengkapi identitas kamu untuk membuat akun presensi" },
   login: { title: "Masuk Akun", subtitle: "Gunakan kelas, nomor presensi, dan password kamu" },
-  reset: { title: "Reset Password", subtitle: "Gunakan kode unik yang kamu buat saat mendaftar" },
-  help: { title: "Lupa Kode Unik?", subtitle: "Kirim permintaan bantu ke panitia — password akan direset menjadi 12345678" },
+  reset: { title: "Lupa Password?", subtitle: "Pilih cara memulihkan akses akun kamu" },
+  help: { title: "Minta Bantu Panitia", subtitle: "Kirim permintaan reset — password akan direset menjadi 12345678" },
+  review: { title: "Tinjau Permintaan", subtitle: "Masukkan kode tinjau 6 karakter untuk memantau status permintaanmu" },
 }
 
-/** Indikator status permintaan bantu (dipakai ulang oleh form & cek status). */
-function HelpStatus({ maskedPhone, waitedMinutes }: { maskedPhone: string; waitedMinutes: number }) {
-  const overtime = waitedMinutes >= 60
+/** Daftar prosedur bernomor — dipakai di form kirim & halaman hasil. */
+function ProsedurList() {
+  const steps = [
+    "Isi kelas, nomor presensi, dan nomor HP yang aktif.",
+    "Permintaan terkirim ke panitia beserta kode tinjau kamu.",
+    "Panitia menghubungi/verifikasi nomor HP-mu lalu mereset password menjadi 12345678.",
+    "Maksimal respon 60 menit — pantau status lewat menu Tinjau Permintaan.",
+  ]
   return (
-    <div className="animate-pop grid gap-2 rounded-2xl border border-[var(--line)] bg-white/[0.04] px-4 py-3.5 text-sm">
-      <p className="flex items-center gap-2 font-semibold text-foreground">
-        {overtime ? (
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--gold)]" />
-        ) : (
-          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--blue)]" />
-        )}
-        {overtime ? "Melewati 60 menit — belum juga diproses?" : "Permintaan sedang diproses panitia"}
+    <div className="rounded-2xl border border-[var(--line)] bg-white/[0.04] px-4 py-3.5">
+      <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--gold)]">
+        <ListChecks className="h-3.5 w-3.5" /> Prosedur Permintaan Reset Password
       </p>
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        Status: <b className="tabular-nums text-foreground/90">{maskedPhone}</b> · menunggu{" "}
-        <b className="tabular-nums text-foreground/90">{waitedMinutes} menit</b>
-      </p>
-      {overtime ? (
-        <p className="rounded-xl border border-[var(--gold)]/40 bg-[var(--gold)]/10 px-3 py-2 text-xs leading-relaxed text-foreground">
-          Jika sudah lebih dari 60 menit dan password belum direset, hubungi panitia langsung dengan menyebutkan nomor HP ini:{" "}
-          <a href="tel:089525385080" className="font-bold tabular-nums text-[var(--gold)] underline decoration-dotted underline-offset-4">
-            089525385080
-          </a>{" "}
-          agar mereka dapat memverifikasi identitasmu.
-        </p>
-      ) : (
-        <p className="text-[11px] text-muted-foreground">
-          Panitia menanggapi maksimal 60 menit. Nomor HP-mu tersimpan aman untuk verifikasi.
-        </p>
-      )}
+      <ol className="grid gap-1.5 text-xs leading-relaxed text-muted-foreground">
+        {steps.map((s, i) => (
+          <li key={i} className="flex gap-2">
+            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--gold)]/15 text-[10px] font-bold tabular-nums text-[var(--gold)]">
+              {i + 1}
+            </span>
+            <span>{s}</span>
+          </li>
+        ))}
+      </ol>
     </div>
   )
 }
 
+/** Kartu hasil berisi kode tinjau + indikator proses + tombol telepon >60 menit. */
+function HelpResult({
+  kode,
+  maskedPhone,
+  waitedMinutes,
+  status,
+}: {
+  kode: string
+  maskedPhone: string
+  waitedMinutes: number
+  status: "pending" | "approved" | "ignored"
+}) {
+  const overtime = status === "pending" && waitedMinutes >= 60
+  const [copied, setCopied] = useState(false)
+  return (
+    <div className="animate-pop grid gap-3">
+      {/* Kode tinjau */}
+      <div className="rounded-2xl border border-[var(--gold)]/40 bg-[var(--gold)]/10 px-4 py-3.5 text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Kode Tinjau Permintaanmu</p>
+        <div className="mt-1 flex items-center justify-center gap-2">
+          <p className="font-mono text-2xl font-black tracking-[0.3em] text-[var(--gold)]">{kode}</p>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(kode).then(() => {
+                setCopied(true)
+                setTimeout(() => setCopied(false), 1500)
+              })
+            }}
+            className="rounded-lg border border-[var(--line)] p-1.5 text-muted-foreground transition hover:scale-105 hover:text-foreground"
+            aria-label="Salin kode tinjau"
+          >
+            {copied ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+          </button>
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">Simpan kode ini untuk mengecek status kapan saja.</p>
+      </div>
+
+      {/* Status */}
+      {status === "pending" ? (
+        <div className="grid gap-2 rounded-2xl border border-[var(--line)] bg-white/[0.04] px-4 py-3.5 text-sm">
+          <p className="flex items-center gap-2 font-semibold text-foreground">
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--blue)]" /> Permintaan sedang diproses panitia
+          </p>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Status: <b className="tabular-nums text-foreground/90">{maskedPhone}</b> · menunggu{" "}
+            <b className="tabular-nums text-foreground/90">{waitedMinutes} menit</b> · maksimal respon{" "}
+            <b className="tabular-nums text-foreground/90">60 menit</b>
+          </p>
+          {overtime ? (
+            <p className="rounded-xl border border-[var(--gold)]/40 bg-[var(--gold)]/10 px-3 py-2 text-xs leading-relaxed text-foreground">
+              Sudah lebih dari 60 menit dan password belum direset? Hubungi panitia untuk konfirmasi dengan menyebutkan nomor HP ini:{" "}
+              <a href="tel:089525385080" className="inline-flex items-center gap-1 font-bold tabular-nums text-[var(--gold)] underline decoration-dotted underline-offset-4">
+                <PhoneCall className="h-3.5 w-3.5" /> 089525385080
+              </a>
+            </p>
+          ) : (
+            <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <Clock3 className="h-3 w-3" /> Nomor HP-mu tersimpan aman untuk verifikasi panitia.
+            </p>
+          )}
+        </div>
+      ) : status === "approved" ? (
+        <div className="grid gap-1.5 rounded-2xl border border-emerald-400/40 bg-emerald-400/15 px-4 py-3.5 text-sm">
+          <p className="flex items-center gap-2 font-semibold text-foreground">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" /> Disetujui! Password-mu sudah direset
+          </p>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Login sekarang dengan password baru <b className="tabular-nums text-foreground/90">12345678</b>, lalu segera ganti lewat menu Pengaturan.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-1.5 rounded-2xl border border-destructive/40 bg-destructive/15 px-4 py-3.5 text-sm">
+          <p className="flex items-center gap-2 font-semibold text-foreground">
+            <XCircle className="h-4 w-4 shrink-0 text-destructive" /> Permintaan tidak disetujui / dihapus panitia
+          </p>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Coba lagi mengirim permintaan, atau hubungi panitia langsung.
+          </p>
+        </div>
+      )}
+
+      <Link
+        href="/#tinjau"
+        className="text-center text-xs text-muted-foreground/80 underline decoration-dotted underline-offset-4 transition hover:text-foreground"
+      >
+        Buka menu Tinjau Permintaan →
+      </Link>
+    </div>
+  )
+}
+
+/** Polling status untuk mode "review" (cek via kode tinjau) tiap 30 detik. */
 export function PesertaAuth({ onBack }: { onBack: () => void }) {
   const [mode, setMode] = useState<Mode>("choice")
   const router = useRouter()
@@ -77,22 +173,60 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
   const [notice, setNotice] = useState<string | null>(null)
 
   // ---- Alur "Lupa Kode Unik" (permintaan bantu ke panitia) ----
-  type HelpState = { maskedPhone: string; waitedMinutes: number; kelas: string; nomor: number }
+  type HelpState = { kode: string; maskedPhone: string; waitedMinutes: number; status: "pending" | "approved" | "ignored" }
   const [helpSent, setHelpSent] = useState<HelpState | null>(null)
 
-  // Setelah terkirim: cek status tiap 30 detik agar angka tunggu & pesan >60 menit akurat.
+  // Cabang form reset mandiri (kode unik) — default tertutup di layar dua cabang.
+  const [showResetForm, setShowResetForm] = useState(false)
+
+  // ---- Menu "Tinjau Permintaan" (cek status via kode tinjau) ----
+  const [reviewKode, setReviewKode] = useState("")
+  const [reviewResult, setReviewResult] = useState<HelpState | null>(null)
+  const lastReviewedStatus = useRef<string | null>(null)
+
+  // Polling status permintaan aktif (setelah kirim / setelah cek kode) tiap 30 detik,
+  // plus bunyikan notifikasi suara saat status berubah jadi disetujui/ditolak.
+  function applyStatus(res: Awaited<ReturnType<typeof checkResetHelpByKode>>, setter: (h: HelpState) => void) {
+    if (!res.ok || !res.found || !res.kodeTinjau) return
+    const next: HelpState = {
+      kode: res.kodeTinjau,
+      maskedPhone: res.maskedPhone!,
+      waitedMinutes: res.waitedMinutes!,
+      status: res.status ?? "pending",
+    }
+    setter(next)
+    if (lastReviewedStatus.current !== null && res.status && res.status !== lastReviewedStatus.current) {
+      if (res.status === "approved") playApproved()
+      else if (res.status === "ignored") playRejected()
+    }
+    lastReviewedStatus.current = res.status ?? "pending"
+  }
+
   useEffect(() => {
     if (!helpSent || mode !== "help") return
-    const fd = new FormData()
-    fd.set("kelas", helpSent.kelas)
-    fd.set("nomorPresensi", String(helpSent.nomor))
+    let cancelled = false
     const iv = setInterval(async () => {
-      const res = await checkResetHelpStatus(fd)
-      if (res.found) setHelpSent((h) => h && { ...h, maskedPhone: res.maskedPhone!, waitedMinutes: res.waitedMinutes! })
+      try {
+        const res = await checkResetHelpByKode(helpSent.kode)
+        if (!cancelled) applyStatus(res, (h) => setHelpSent(h))
+      } catch { /* diam */ }
     }, 30_000)
-    return () => clearInterval(iv)
+    return () => { cancelled = true; clearInterval(iv) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [helpSent?.kelas, helpSent?.nomor, mode])
+  }, [helpSent?.kode, mode])
+
+  useEffect(() => {
+    if (!reviewResult || mode !== "review") return
+    let cancelled = false
+    const iv = setInterval(async () => {
+      try {
+        const res = await checkResetHelpByKode(reviewResult.kode)
+        if (!cancelled) applyStatus(res, (h) => setReviewResult(h))
+      } catch { /* diam */ }
+    }, 30_000)
+    return () => { cancelled = true; clearInterval(iv) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reviewResult?.kode, mode])
 
   function handle(action: (fd: FormData) => Promise<{ ok: boolean; error?: string }>, form: HTMLFormElement, onOk?: () => void) {
     setError(null)
@@ -125,7 +259,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
           <span className="relative mx-auto mb-4 inline-block">
             <span className="conic-ring absolute -inset-1.5 rounded-3xl opacity-60 blur-[3px]" aria-hidden="true" />
             <span className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--gold),#e8c87a)] text-[oklch(0.2_0.03_255)] shadow-xl shadow-[var(--gold)]/25">
-              {mode === "reset" ? <KeyRound className="h-8 w-8" /> : mode === "login" ? <LogIn className="h-8 w-8" /> : <UserPlus className="h-8 w-8" />}
+              {mode === "reset" ? <KeyRound className="h-8 w-8" /> : mode === "login" ? <LogIn className="h-8 w-8" /> : mode === "review" ? <Eye className="h-8 w-8" /> : mode === "help" ? <Inbox className="h-8 w-8" /> : <UserPlus className="h-8 w-8" />}
             </span>
           </span>
           <h2 className="font-serif text-2xl font-semibold text-foreground">{heading.title}</h2>
@@ -154,7 +288,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
             </GhostButton>
             <button
               type="button"
-              onClick={() => setMode("reset")}
+              onClick={() => { setError(null); setNotice(null); setHelpSent(null); setReviewKode(""); setReviewResult(null); setMode("reset") }}
               className="mt-1 text-center text-xs text-muted-foreground/80 underline decoration-dotted underline-offset-4 transition hover:text-foreground"
             >
               Lupa password? →
@@ -162,12 +296,24 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
           </div>
         )}
 
-        {mode === "reset" && (
-          <div className="mt-1 text-center">
+        {mode === "reset" && !showResetForm && (
+          // ---- Dua cabang: kirim permintaan baru ATAU tinjau yang sudah ada ----
+          <div className="grid gap-3">
+            <p className="text-center text-xs leading-relaxed text-muted-foreground">
+              Reset mandiri dengan kode unik, atau minta bantuan panitia.
+            </p>
+            <GradientButton onClick={() => setShowResetForm(true)}>
+              <KeyRound className="h-5 w-5" /> Permintaan Reset Password
+              <ChevronRight className="ml-auto h-4 w-4 opacity-60" />
+            </GradientButton>
+            <GhostButton onClick={() => setMode("review")}>
+              <Eye className="h-5 w-5" /> Tinjau Permintaan
+              <span className="ml-auto rounded-full bg-[var(--gold)]/15 px-2 py-0.5 text-[10px] font-bold tabular-nums text-[var(--gold)]">kode 6 karakter</span>
+            </GhostButton>
             <button
               type="button"
               onClick={() => { setError(null); setNotice(null); setHelpSent(null); setMode("help") }}
-              className="text-xs text-muted-foreground/80 underline decoration-dotted underline-offset-4 transition hover:text-[var(--gold)]"
+              className="text-center text-xs text-muted-foreground/80 underline decoration-dotted underline-offset-4 transition hover:text-[var(--gold)]"
             >
               Lupa Kode Unik? Minta bantu panitia →
             </button>
@@ -346,10 +492,12 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
           (helpSent ? (
             // ---- Indikator: permintaan sedang diproses panitia ----
             <div className="grid gap-4">
-              <HelpStatus maskedPhone={helpSent.maskedPhone} waitedMinutes={helpSent.waitedMinutes} />
-              <GhostButton onClick={() => { setHelpSent(null); setMode("reset") }}>
-                <ChevronRight className="mr-auto h-4 w-4 rotate-180" /> Coba reset mandiri dengan kode unik
-              </GhostButton>
+              <HelpResult kode={helpSent.kode} maskedPhone={helpSent.maskedPhone} waitedMinutes={helpSent.waitedMinutes} status={helpSent.status} />
+              {helpSent.status === "pending" && (
+                <GhostButton onClick={() => { setHelpSent(null); setShowResetForm(false); setMode("reset") }}>
+                  <ChevronRight className="mr-auto h-4 w-4 rotate-180" /> Coba reset mandiri dengan kode unik
+                </GhostButton>
+              )}
             </div>
           ) : (
             // ---- Form kirim permintaan bantu ----
@@ -362,11 +510,12 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
                 startTransition(async () => {
                   const res = await requestResetHelp(fd)
                   if (res.ok) {
+                    lastReviewedStatus.current = res.status ?? "pending"
                     setHelpSent({
+                      kode: res.kodeTinjau!,
                       maskedPhone: res.maskedPhone!,
                       waitedMinutes: res.waitedMinutes!,
-                      kelas: String(fd.get("kelas")),
-                      nomor: Number(String(fd.get("nomorPresensi"))),
+                      status: res.status ?? "pending",
                     })
                   } else {
                     setError(res.error ?? "Gagal mengirim permintaan.")
@@ -375,11 +524,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
               }}
               className="grid gap-4"
             >
-              <p className="rounded-2xl border border-[var(--line)] bg-white/[0.04] px-4 py-3 text-xs leading-relaxed text-muted-foreground">
-                Prosedur sederhana: kirim permintaan ini, panitia akan memverifikasi lewat nomor HP-mu lalu{" "}
-                <b className="text-foreground/90">mereset password menjadi 12345678</b>. Maksimal respon{" "}
-                <b className="tabular-nums text-foreground/90">60 menit</b>.
-              </p>
+              <ProsedurList />
               <div className="grid grid-cols-2 gap-3">
                 <SelectField label="Kelas" name="kelas" required defaultValue="">
                   <option value="" disabled>Pilih kelas</option>
@@ -417,6 +562,95 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
               </GradientButton>
             </form>
           ))}
+
+        {mode === "review" && (
+          reviewResult ? (
+            // ---- Hasil tinjauan via kode 6 karakter ----
+            <div className="grid gap-4">
+              <HelpResult
+                kode={reviewResult.kode}
+                maskedPhone={reviewResult.maskedPhone}
+                waitedMinutes={reviewResult.waitedMinutes}
+                status={reviewResult.status}
+              />
+              {reviewResult.status === "pending" && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!confirm("Batalkan permintaan reset ini?")) return
+                    const res = await cancelResetHelpByKode(reviewResult.kode)
+                    if (res.ok) {
+                      setReviewResult(null)
+                      setNotice("Permintaan dibatalkan. Kamu bisa mengirim baru kapan saja.")
+                      setMode("reset")
+                    } else {
+                      setError(res.error ?? "Gagal membatalkan permintaan.")
+                    }
+                  }}
+                  className="text-center text-xs text-muted-foreground/80 underline decoration-dotted underline-offset-4 transition hover:text-destructive"
+                >
+                  Batalkan permintaan ini →
+                </button>
+              )}
+              <GhostButton onClick={() => { setReviewResult(null); setReviewKode("") }}>
+                <ChevronRight className="mr-auto h-4 w-4 rotate-180" /> Cek kode lain
+              </GhostButton>
+            </div>
+          ) : (
+            // ---- Form masukkan kode tinjau ----
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                e.currentTarget
+                setError(null)
+                startTransition(async () => {
+                  const res = await checkResetHelpByKode(reviewKode)
+                  if (res.ok && res.found) {
+                    lastReviewedStatus.current = res.status ?? "pending"
+                    if (res.status === "approved") playApproved()
+                    else if (res.status === "ignored") playRejected()
+                    setReviewResult({
+                      kode: res.kodeTinjau!,
+                      maskedPhone: res.maskedPhone!,
+                      waitedMinutes: res.waitedMinutes!,
+                      status: res.status ?? "pending",
+                    })
+                  } else {
+                    setError(res.error ?? "Kode tidak ditemukan.")
+                  }
+                })
+              }}
+              className="grid gap-4"
+            >
+              <p className="rounded-2xl border border-[var(--line)] bg-white/[0.04] px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+                Masukkan <b className="text-foreground/90">kode tinjau 6 karakter</b> yang kamu terima saat mengirim permintaan reset. Status akan muncul di sini dan diperbarui otomatis.
+              </p>
+              <TextField
+                label="Kode Tinjau"
+                name="kodeTinjau"
+                required
+                autoFocus
+                maxLength={8}
+                placeholder="Contoh: A7B2C9"
+                icon={<Eye />}
+                style={{ textTransform: "uppercase", letterSpacing: "0.3em", textAlign: "center", fontFamily: "monospace" }}
+                value={reviewKode}
+                onChange={(e) => setReviewKode(e.currentTarget.value.toUpperCase())}
+              />
+              <GradientButton type="submit" disabled={pending}>
+                {pending ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" /> Mengecek...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-5 w-5" /> Cek Status Permintaan
+                  </>
+                )}
+              </GradientButton>
+            </form>
+          )
+        )}
       </GlassCard>
     </div>
   )
