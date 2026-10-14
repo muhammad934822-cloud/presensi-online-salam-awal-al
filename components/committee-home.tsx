@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, ShieldCheck, ScanLine, Users, Activity, Home , Lightbulb, History } from "lucide-react"
+import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, ShieldCheck, ScanLine, Users, Activity, Home , Lightbulb, History, BellRing } from "lucide-react"
 import { GlassCard } from "./ui-kit"
 import { VerifySubmenu } from "./committee/verify-submenu"
 import { RecapSubmenu } from "./committee/recap-submenu"
@@ -12,6 +12,9 @@ import { SettingsPanel } from "./settings-panel"
 import { ActivityList } from "./activity-list"
 import { EVENTS, EVENT_LABELS, type EventKey } from "@/lib/db/schema"
 import type { RecapRow, AccountRow, ActivityRow, ClassStat } from "@/lib/queries"
+import { getPendingResetHelp, resetHelpByClassNomor, type HelpRequest } from "@/app/actions/committee"
+import { cancelResetHelp } from "@/app/actions/participant"
+import { useEffect, useRef } from "react"
 
 const ICONS: Record<EventKey, typeof GraduationCap> = {
   studium_generale: GraduationCap,
@@ -38,6 +41,40 @@ export function CommitteeHome({
   const [tab, setTab] = useState<"verifikasi" | "rekap">("verifikasi")
   const router = useRouter()
 
+  /* ---- Tinjauan permintaan "Lupa Kode Unik" dari peserta ---- */
+  const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([])
+  const [busyHelp, setBusyHelp] = useState<string | null>(null)
+  const helpTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  async function refreshHelp() {
+    try {
+      setHelpRequests(await getPendingResetHelp())
+    } catch {
+      /* diamlah — jangan jatuhkan dashboard karena gagal ambil tinjauan */
+    }
+  }
+  useEffect(() => {
+    void refreshHelp()
+    helpTimer.current = setInterval(() => { if (!document.hidden) void refreshHelp() }, 15_000)
+    return () => { if (helpTimer.current) clearInterval(helpTimer.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function handleHelpAction(kelas: string, nomor: number, kind: "reset" | "ignore") {
+    const key = `${kelas}-${nomor}`
+    setBusyHelp(key)
+    try {
+      const res = kind === "reset"
+        ? await resetHelpByClassNomor(kelas, nomor)
+        : await cancelResetHelp(kelas, nomor)
+      if (!res.ok && res.error) alert(res.error)
+    } finally {
+      setBusyHelp(null)
+      void refreshHelp()
+      router.refresh()
+    }
+  }
+
   const totalVerified = EVENTS.reduce((n, ev) => n + (recaps[ev]?.filter((r) => r.verifiedAt).length ?? 0), 0)
   const totalShown = EVENTS.reduce((n, ev) => n + (recaps[ev]?.length ?? 0), 0)
 
@@ -60,6 +97,58 @@ export function CommitteeHome({
           </GlassCard>
         ))}
       </div>
+
+      {/* Tinjauan permintaan "Lupa Kode Unik" dari peserta */}
+      {helpRequests.length > 0 && (
+        <GlassCard className="animate-rise-1 mb-5 !p-0 overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-[var(--line)] bg-[var(--gold)]/10 px-4 py-3">
+            <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--gold)] to-[var(--purple)] text-white shadow-md">
+              <BellRing className="h-4 w-4" />
+            </span>
+            <p className="text-sm font-semibold text-foreground">Perlu Ditinjau — Permintaan Bantu Reset</p>
+            <span className="ml-auto inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--gold)] px-2 text-xs font-bold tabular-nums text-black">
+              {helpRequests.length}
+            </span>
+          </div>
+          <ul className="divide-y divide-[var(--line)]">
+            {helpRequests.map((h) => {
+              const key = `${h.kelas}-${h.nomor}`
+              const waited = Math.max(0, Math.floor((Date.now() - h.createdAt.getTime()) / 60_000))
+              const overdue = waited >= 60
+              const busy = busyHelp === key
+              return (
+                <li key={key} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 transition-colors hover:bg-white/[0.04]">
+                  <span className="min-w-0 flex-1">
+                    <span className="block break-words text-sm font-semibold text-foreground">{h.nama}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      {h.kelas} · No. {h.nomor} · HP {h.phone.slice(0, 4)}****{h.phone.slice(-4)} ·{" "}
+                      <span className={overdue ? "font-semibold text-[var(--gold)]" : ""}>
+                        menunggu {waited} mnt{overdue ? " ⏰" : ""}
+                      </span>
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => handleHelpAction(h.kelas, h.nomor, "reset")}
+                      disabled={busy}
+                      className="lift rounded-xl bg-gradient-to-r from-[var(--gold)] to-[var(--purple)] px-3 py-1.5 text-xs font-bold text-white shadow-md transition disabled:opacity-50"
+                    >
+                      {busy ? "Memproses…" : "Reset → 12345678"}
+                    </button>
+                    <button
+                      onClick={() => handleHelpAction(h.kelas, h.nomor, "ignore")}
+                      disabled={busy}
+                      className="rounded-xl border border-[var(--line)] px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground disabled:opacity-50"
+                    >
+                      Abaikan
+                    </button>
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </GlassCard>
+      )}
 
           {/* Progress kehadiran per kegiatan */}
           <GlassCard className="animate-rise-2 mb-5">

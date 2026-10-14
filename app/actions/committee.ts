@@ -1,8 +1,8 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { participants, attendance } from "@/lib/db/schema"
-import { and, eq } from "drizzle-orm"
+import { participants, attendance, activityLog } from "@/lib/db/schema"
+import { and, eq, sql, desc } from "drizzle-orm"
 import { hashPassword } from "@/lib/crypto"
 import {
   createCommitteeSession,
@@ -12,6 +12,7 @@ import {
 import { COMMITTEE_PASSWORD } from "@/lib/constants"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/queries"
+import { ensureActivityLog } from "@/lib/db/migrate"
 
 type ActionResult = { ok: boolean; error?: string }
 
@@ -140,4 +141,66 @@ export async function resetParticipantPassword(
   logActivity("PANITIA", "reset-password", `peserta ${participantId}`)
   revalidatePath("/")
   return { ok: true }
+}
+
+/* ------------------------------------------------------------------ */
+/* Tinjauan "Lupa Kode Unik" di beranda panitia                        */
+/* Membaca record RESET-BANTU dari activity_log yang SUDAH ADA —        */
+/* tidak menambah tabel/kolom DB apa pun.                              */
+/* ------------------------------------------------------------------ */
+
+const HELP_PREFIX = "RESET-BANTU::"
+
+export type HelpRequest = { nama: string; kelas: string; nomor: number; phone: string; createdAt: Date }
+
+export async function getPendingResetHelp(): Promise<HelpRequest[]> {
+  if (!(await isCommittee())) return []
+  await ensureActivityLog()
+  const rows = await db
+    .select()
+    .from(activityLog)
+    .where(sql`${activityLog.detail} LIKE ${HELP_PREFIX + "%"}`)
+    .orderBy(desc(activityLog.createdAt))
+    .limit(200)
+
+  const seen = new Set<string>()
+  const out: HelpRequest[] = []
+  for (const r of rows) {
+    if (r.action === "reset-bantu-dibatalkan") continue
+    if (!r.detail?.startsWith(HELP_PREFIX)) continue
+    const [nama, kelas, nomor, phone] = r.detail.slice(HELP_PREFIX.length).split("::")
+    if (!nama || !kelas || !nomor || !phone) continue
+    const key = `${kelas}-${nomor}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    // hanya yang masih aktif: password belum pernah direset setelah permintaan
+    out.push({ nama, kelas, nomor: Number(nomor), phone, createdAt: r.createdAt })
+  }
+  return out
+}
+
+// Panitia mereset langsung dari kartu tinjauan → password jadi 12345678.
+export async function resetHelpByClassNomor(kelas: string, nomorPresensi: number): Promise<ActionResult> {
+  if (!(await isCommittee())) return { ok: false, error: "Tidak diizinkan." }
+  const [p] = await db
+    .select({ id: participants.id, nama: participants.nama })
+    .from(participants)
+    .where(and(eq(participants.kelas, kelas), eq(participants.nomorPresensi, nomorPresensi)))
+    .limit(1)
+  if (!p) return { ok: false, error: "Peserta tidak ditemukan." }
+
+  await db.update(participants).set({ passwordHash: hashPassword("12345678") }).where(eq(participants.id, p.id))
+  await cancelResetHelpMarked(kelas, nomorPresensi)
+  logActivity("PANITIA", "reset-password-bantuan", `${kelas}/${nomorPresensi} (${p.nama})`)
+  revalidatePath("/")
+  return { ok: true }
+}
+
+async function cancelResetHelpMarked(kelas: string, nomorPresensi: number) {
+  await ensureActivityLog()
+  await db.insert(activityLog).values({
+    actor: "PANITIA",
+    action: "reset-bantu-dibatalkan",
+    detail: `${HELP_PREFIX}${kelas}::${nomorPresensi}`,
+  })
 }

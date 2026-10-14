@@ -1,19 +1,22 @@
 "use server"
 
 import { db } from "@/lib/db"
+import { activityLog } from "@/lib/db/schema"
 import { participants, attendance, EVENTS } from "@/lib/db/schema"
-import { and, eq } from "drizzle-orm"
+import { and, desc, eq, sql } from "drizzle-orm"
 import { hashPassword, verifyPassword, generate16DigitCode } from "@/lib/crypto"
 import {
   createParticipantSession,
   destroyParticipantSession,
   getParticipantId,
+  isCommittee,
 } from "@/lib/session"
 import { KELAS_OPTIONS } from "@/lib/constants"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/queries"
+import { ensureActivityLog } from "@/lib/db/migrate"
 
-type ActionResult = { ok: boolean; error?: string }
+type ActionResult = { ok: boolean; error?: string; maskedPhone?: string; waitedMinutes?: number }
 
 function validKelas(kelas: string) {
   return (KELAS_OPTIONS as readonly string[]).includes(kelas)
@@ -101,6 +104,9 @@ export async function loginParticipant(formData: FormData): Promise<ActionResult
   return { ok: true }
 }
 
+// Reset password mandiri dengan KODE UNIK — hanya untuk akun yang belum
+// sempat login sama sekali (belum ada sesi). Kalau sudah login, pakai
+// changePasswordSelf di Pengaturan. Memakai kolom existing saja.
 export async function resetPasswordWithKode(formData: FormData): Promise<ActionResult> {
   const kelas = String(formData.get("kelas") ?? "").trim()
   const nomorPresensi = Number(formData.get("nomorPresensi"))
@@ -128,6 +134,121 @@ export async function resetPasswordWithKode(formData: FormData): Promise<ActionR
     .set({ passwordHash: hashPassword(newPassword) })
     .where(eq(participants.id, p.id))
 
+  return { ok: true }
+}
+
+/* ------------------------------------------------------------------ */
+/* Permintaan bantu "Lupa Kode Unik" (alur sederhana via panitia)      */
+/* Disimpan di tabel activity_log yang SUDAH ADA sebagai record         */
+/* berformat khusus — TIDAK menambah tabel/kolom DB apa pun.           */
+/* ------------------------------------------------------------------ */
+
+const HELP_PREFIX = "RESET-BANTU::"
+const PHONE_RE = /^08\d{8,12}$/
+
+function maskPhone(phone: string): string {
+  // 089525385080 -> 0895****5080
+  if (phone.length <= 8) return `${phone.slice(0, 3)}****`
+  return `${phone.slice(0, 4)}****${phone.slice(-4)}`
+}
+
+type HelpRecord = { nama: string; kelas: string; nomor: number; phone: string; createdAt: Date }
+
+async function readHelpRecords(): Promise<HelpRecord[]> {
+  await ensureActivityLog()
+  const rows = await db
+    .select()
+    .from(activityLog)
+    .where(sql`${activityLog.detail} LIKE ${HELP_PREFIX + "%"}`)
+    .orderBy(desc(activityLog.createdAt))
+    .limit(200)
+
+  const seen = new Set<string>()
+  const out: HelpRecord[] = []
+  for (const r of rows) {
+    if (r.action === "reset-bantu-dibatalkan") continue
+    if (!r.detail?.startsWith(HELP_PREFIX)) continue
+    const body = r.detail.slice(HELP_PREFIX.length)
+    const [nama, kelas, nomor, phone] = body.split("::")
+    if (!nama || !kelas || !nomor || !phone) continue
+    const key = `${kelas}-${nomor}`
+    if (seen.has(key)) continue // satu permintaan aktif per akun (yang terbaru)
+    seen.add(key)
+    out.push({ nama, kelas, nomor: Number(nomor), phone, createdAt: r.createdAt })
+  }
+  return out
+}
+
+// Peserta mengirim permintaan reset dibantu panitia (dengan nomor HP).
+export async function requestResetHelp(formData: FormData): Promise<ActionResult> {
+  const kelas = String(formData.get("kelas") ?? "").trim()
+  const nomorPresensi = Number(formData.get("nomorPresensi"))
+  const phone = String(formData.get("phone") ?? "").replace(/[\s-]/g, "")
+
+  if (!validKelas(kelas)) return { ok: false, error: "Kelas tidak valid." }
+  if (!Number.isInteger(nomorPresensi))
+    return { ok: false, error: "Nomor presensi tidak valid." }
+  if (!PHONE_RE.test(phone))
+    return { ok: false, error: "Nomor HP tidak valid. Contoh: 089525385080." }
+
+  const [p] = await db
+    .select({ id: participants.id, nama: participants.nama })
+    .from(participants)
+    .where(and(eq(participants.kelas, kelas), eq(participants.nomorPresensi, nomorPresensi)))
+    .limit(1)
+  if (!p) return { ok: false, error: "Akun tidak ditemukan. Periksa kelas & nomor presensi." }
+
+  const existing = await readHelpRecords()
+  const active = existing.find((h) => h.kelas === kelas && h.nomor === nomorPresensi)
+  if (active) {
+    return {
+      ok: true,
+      maskedPhone: maskPhone(active.phone),
+      waitedMinutes: Math.floor((Date.now() - active.createdAt.getTime()) / 60000),
+    }
+  }
+
+  await db.insert(activityLog).values({
+    actor: p.nama,
+    action: "reset-bantu",
+    detail: `${HELP_PREFIX}${p.nama}::${kelas}::${nomorPresensi}::${phone}`,
+  })
+  logActivity(p.nama, "permintaan-reset-bantu", `${kelas}/${nomorPresensi}`)
+  revalidatePath("/")
+  return {
+    ok: true,
+    maskedPhone: maskPhone(phone),
+    waitedMinutes: 0,
+  }
+}
+
+// Peserta mengecek status permintaannya sendiri (untuk indikator proses).
+export async function checkResetHelpStatus(formData: FormData): Promise<ActionResult & { found?: boolean }> {
+  const kelas = String(formData.get("kelas") ?? "").trim()
+  const nomorPresensi = Number(formData.get("nomorPresensi"))
+  if (!validKelas(kelas) || !Number.isInteger(nomorPresensi))
+    return { ok: false, error: "Kelas/nomor tidak valid." }
+  const records = await readHelpRecords()
+  const mine = records.find((h) => h.kelas === kelas && h.nomor === nomorPresensi)
+  if (!mine) return { ok: true, found: false }
+  return {
+    ok: true,
+    found: true,
+    maskedPhone: maskPhone(mine.phone),
+    waitedMinutes: Math.max(0, Math.floor((Date.now() - mine.createdAt.getTime()) / 60000)),
+  }
+}
+
+// Panitia membatalkan permintaan yang sudah diproses/manual.
+export async function cancelResetHelp(kelas: string, nomorPresensi: number): Promise<ActionResult> {
+  if (!(await isCommittee())) return { ok: false, error: "Tidak diizinkan." }
+  await ensureActivityLog()
+  await db.insert(activityLog).values({
+    actor: "PANITIA",
+    action: "reset-bantu-dibatalkan",
+    detail: `${HELP_PREFIX}${kelas}::${nomorPresensi}`,
+  })
+  revalidatePath("/")
   return { ok: true }
 }
 
