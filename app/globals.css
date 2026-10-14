@@ -320,8 +320,8 @@
 /* Overlay putih jadi tinta gelap lembut di tema terang */
 .theme-light .bg-white\/5 { background: oklch(0.3 0.02 258 / 6%); }
 .theme-light .hover\:bg-white\/5:hover { background: oklch(0.3 0.02 258 / 7%); }
-.theme-light .bg-white\/\\[0\.12\\] { background: oklch(0.3 0.02 258 / 13%); }
-.theme-light .bg-white\/\\[0\.25\\] { background: oklch(0.3 0.02 258 / 18%); }
+.theme-light .bg-white\/\[0\.12\] { background: oklch(0.3 0.02 258 / 13%); }
+.theme-light .bg-white\/\[0\.25\] { background: oklch(0.3 0.02 258 / 18%); }
 .theme-light .border-white\/10 { border-color: oklch(0.3 0.02 258 / 14%); }
 .theme-light .border-white\/8 { border-color: oklch(0.3 0.02 258 / 12%); }
 .theme-light .border-white\/35 { border-color: oklch(0.3 0.02 258 / 22%); }
