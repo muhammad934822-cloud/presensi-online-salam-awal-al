@@ -28,11 +28,14 @@ export function SettingsPanel({
   role,
   nama,
   dryRun = false,
+  hideLogout = false,
 }: {
   role: "peserta" | "panitia"
   nama?: string
   /** Mode ujicoba: form tampil lengkap & tervalidasi, tapi TIDAK menyimpan apa pun. */
   dryRun?: boolean
+  /** Sembunyikan tombol Keluar (mis. di dalam akun demo panitia). */
+  hideLogout?: boolean
 }) {
   const { theme, toggleTheme } = useTheme()
   const router = useRouter()
@@ -271,8 +274,8 @@ export function SettingsPanel({
         </div>
       </GlassCard>
 
-      {/* Keluar — disembunyikan di mode ujicoba agar panitia tidak logout dari akun aslinya */}
-      {!dryRun && (
+      {/* Keluar — disembunyikan di mode ujicoba/demo agar panitia tidak logout dari akun aslinya */}
+      {!dryRun && !hideLogout && (
       <GhostButton
         onClick={() =>
           startTransition(async () => {

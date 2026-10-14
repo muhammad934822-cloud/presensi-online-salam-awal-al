@@ -114,7 +114,7 @@ export type AccountRow = {
 }
 
 export async function getAllParticipants(): Promise<AccountRow[]> {
-  return db
+  const rows = await db
     .select({
       id: participants.id,
       nama: participants.nama,
@@ -125,6 +125,9 @@ export async function getAllParticipants(): Promise<AccountRow[]> {
     })
     .from(participants)
     .orderBy(asc(participants.kelas), asc(participants.nomorPresensi))
+  // Akun demo (kelas "DEMO") disembunyikan dari Daftar Peserta — hanya
+  // muncul di menu Ujicoba. Data peserta asli tidak tersentuh.
+  return rows.filter((r) => r.kelas !== "DEMO")
 }
 
 export async function getMyCodes(participantId: string) {

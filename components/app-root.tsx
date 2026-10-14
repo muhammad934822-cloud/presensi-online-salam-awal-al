@@ -17,13 +17,15 @@ type Props = {
   participant: { nama: string; kelas: string; nomorPresensi: number } | null
   codes: Codes | null
   committee: boolean
+  /** Panitia sedang membuka sesi Ujicoba akun demo. */
+  demoActive?: boolean
   recaps: Record<EventKey, RecapRow[]> | null
   accounts: AccountRow[] | null
   activity?: ActivityRow[] | null
   classStats?: ClassStat[] | null
 }
 
-export function AppRoot({ participant, codes, committee, recaps, accounts, activity, classStats }: Props) {
+export function AppRoot({ participant, codes, committee, demoActive, recaps, accounts, activity, classStats }: Props) {
   const [choice, setChoice] = useState<"none" | "peserta" | "panitia">("none")
   // Setelah login: tampilkan halaman utama dulu; dashboard dibuka lewat tombol.
   const [openDash, setOpenDash] = useState(false)
@@ -78,7 +80,14 @@ export function AppRoot({ participant, codes, committee, recaps, accounts, activ
   }
 
   if (committee && recaps && accounts && openDash) {
-    return <CommitteeHome recaps={recaps} accounts={accounts} activity={activity ?? undefined} classStats={classStats ?? undefined} onExit={() => setOpenDash(false)} />
+    return <CommitteeHome recaps={recaps} accounts={accounts} activity={activity ?? undefined} classStats={classStats ?? undefined} demoActive={Boolean(demoActive)} onExit={() => setOpenDash(false)} />
+  }
+
+  // Panitia membuka sesi Ujicoba akun demo: langsung arahkan ke menu Ujicoba.
+  if (committee && recaps && accounts) {
+    return (
+      <CommitteeHome recaps={recaps} accounts={accounts} activity={activity ?? undefined} classStats={classStats ?? undefined} demoActive={Boolean(demoActive)} onExit={() => setOpenDash(false)} />
+    )
   }
 
   if (choice === "peserta") return <PesertaAuth onBack={() => setChoice("none")} />

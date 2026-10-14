@@ -12,6 +12,7 @@ import {
   isCommittee,
 } from "@/lib/session"
 import { KELAS_OPTIONS } from "@/lib/constants"
+import { DEMO_KELAS, DEMO_NOMOR, DEMO_PASSWORD } from "@/lib/demo"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/queries"
 import { ensureActivityLog } from "@/lib/db/migrate"
@@ -325,6 +326,127 @@ export async function cancelResetHelpByKode(kodeTinjauRaw: string): Promise<Acti
 export async function logoutParticipant() {
   await destroyParticipantSession()
   revalidatePath("/")
+}
+
+/* ------------------------------------------------------------------ */
+/* AKUN DEMO — satu akun peserta sungguhan (nama "AKUN DEMO") khusus   */
+/* panitia untuk menguji fitur peserta end-to-end (login, QR, scan     */
+/* sendiri, reset password, dsb.) TANPA mengganggu akun peserta asli.  */
+/* Hanya memakai tabel & kolom yang SUDAH ADA.                         */
+/* ------------------------------------------------------------------ */
+
+
+async function findDemoId(): Promise<string | null> {
+  const [p] = await db
+    .select({ id: participants.id })
+    .from(participants)
+    .where(and(eq(participants.kelas, DEMO_KELAS), eq(participants.nomorPresensi, DEMO_NOMOR)))
+    .limit(1)
+  return p?.id ?? null
+}
+
+/** Panitia membuka menu Ujicoba: sesi panitia dibaca, lalu cookie peserta diisi id akun demo (ditandatangani sama seperti login biasa). */
+export async function openDemoSession(): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isCommittee())) return { ok: false, error: "Tidak diizinkan." }
+  let id = await findDemoId()
+  if (!id) {
+    const r = await ensureDemoAccount()
+    if (!r.ok) return r
+    id = await findDemoId()
+  }
+  if (!id) return { ok: false, error: "Akun demo gagal dibuat." }
+  await createParticipantSession(id)
+  revalidatePath("/")
+  return { ok: true }
+}
+
+/** Panitia menutup mode ujicoba: hanya menghapus cookie sesi peserta — SAMA SEKALI tidak menyentuh data apa pun. */
+export async function closeDemoSession(): Promise<{ ok: boolean }> {
+  if (!(await isCommittee())) return { ok: false }
+  await destroyParticipantSession()
+  revalidatePath("/")
+  return { ok: true }
+}
+
+/** Panitia: buat ulang / atur ulang akun demo ke kondisi awal yang bersih. */
+export async function ensureDemoAccount(): Promise<
+  { ok: boolean; error?: string } & { created?: boolean; reset?: boolean }
+> {
+  if (!(await isCommittee())) return { ok: false, error: "Tidak diizinkan." }
+
+  const [p] = await db
+    .select({ id: participants.id })
+    .from(participants)
+    .where(and(eq(participants.kelas, DEMO_KELAS), eq(participants.nomorPresensi, DEMO_NOMOR)))
+    .limit(1)
+
+  if (!p) {
+    const [created] = await db
+      .insert(participants)
+      .values({
+        nama: "AKUN DEMO",
+        kelas: DEMO_KELAS,
+        nomorPresensi: DEMO_NOMOR,
+        passwordHash: hashPassword(DEMO_PASSWORD),
+        kodeUnik: "DEMO1234",
+      })
+      .returning({ id: participants.id })
+    for (const event of EVENTS) {
+      await db.insert(attendance).values({
+        participantId: created.id,
+        event,
+        code: generate16DigitCode(),
+      })
+    }
+    logActivity("PANITIA", "buat-akun-demo", `${DEMO_KELAS}/${DEMO_NOMOR}`)
+    revalidatePath("/")
+    return { ok: true, created: true }
+  }
+
+  await db
+    .update(participants)
+    .set({ nama: "AKUN DEMO", passwordHash: hashPassword(DEMO_PASSWORD), kodeUnik: "DEMO1234" })
+    .where(eq(participants.id, p.id))
+  await db
+    .delete(attendance)
+    .where(eq(attendance.participantId, p.id))
+  for (const event of EVENTS) {
+    await db.insert(attendance).values({
+      participantId: p.id,
+      event,
+      code: generate16DigitCode(),
+    })
+  }
+  logActivity("PANITIA", "reset-akun-demo", `${DEMO_KELAS}/${DEMO_NOMOR}`)
+  revalidatePath("/")
+  return { ok: true, reset: true }
+}
+
+/** Baca data dashboard akun demo (khusus sesi panitia). */
+export async function getDemoDashboard(): Promise<{
+  ok: boolean
+  error?: string
+  data?: {
+    nama: string
+    kelas: string
+    nomorPresensi: number
+    codes: Record<string, { code: string; verifiedAt: Date | null }>
+  }
+}> {
+  if (!(await isCommittee())) return { ok: false, error: "Tidak diizinkan." }
+  const [p] = await db
+    .select({ id: participants.id, nama: participants.nama, kelas: participants.kelas, nomorPresensi: participants.nomorPresensi })
+    .from(participants)
+    .where(and(eq(participants.kelas, DEMO_KELAS), eq(participants.nomorPresensi, DEMO_NOMOR)))
+    .limit(1)
+  if (!p) return { ok: false, error: "Akun demo belum dibuat." }
+  const rows = await db
+    .select({ event: attendance.event, code: attendance.code, verifiedAt: attendance.verifiedAt })
+    .from(attendance)
+    .where(eq(attendance.participantId, p.id))
+  const codes: Record<string, { code: string; verifiedAt: Date | null }> = {}
+  for (const r of rows) codes[r.event] = { code: r.code, verifiedAt: r.verifiedAt }
+  return { ok: true, data: { nama: p.nama, kelas: p.kelas, nomorPresensi: p.nomorPresensi, codes } }
 }
 
 // Ganti nama peserta yang sedang login (kolom `nama` yang sudah ada).

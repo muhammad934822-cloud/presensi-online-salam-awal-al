@@ -43,12 +43,15 @@ export function ParticipantHome({
   nomorPresensi,
   codes,
   onExit,
+  demoMode = false,
 }: {
   nama: string
   kelas: string
   nomorPresensi: number
   codes: Codes
   onExit?: () => void
+  /** Mode akun demo panitia: tanpa polling DB & tanpa selebrasi realtime. */
+  demoMode?: boolean
 }) {
   const [section, setSection] = useState<DashSection>("beranda")
   const [selected, setSelected] = useState<EventKey | null>(null)
@@ -59,6 +62,7 @@ export function ParticipantHome({
      discan" untuk selebrasi + suara ditangani <AttendanceCelebration/>
      (polling query baca kecil terpisah) — tidak ada penulisan DB. */
   useEffect(() => {
+    if (demoMode) return // akun demo: tidak perlu sinkronisasi realtime
     let alive = true
     const tick = () => {
       if (alive && document.visibilityState === "visible") router.refresh()
@@ -266,13 +270,13 @@ export function ParticipantHome({
 
   const pengaturan = (
     <div className="w-full">
-      <SettingsPanel role="peserta" nama={nama} />
+      <SettingsPanel role="peserta" nama={nama} dryRun={demoMode} hideLogout={demoMode} />
     </div>
   )
 
   return (
     <div className="w-full">
-      <AttendanceCelebration initial={initialStatus} />
+      {!demoMode && <AttendanceCelebration initial={initialStatus} />}
       <DashboardShell
           sections={["beranda", "presensi", "pengaturan"]}
           active={section}

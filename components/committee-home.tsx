@@ -13,6 +13,7 @@ import { PesertaAuth, UjiCobaContext } from "./peserta-auth"
 import { generate16DigitCode } from "@/lib/crypto"
 import { DashboardShell, type DashSection } from "./dashboard-shell"
 import { SettingsPanel } from "./settings-panel"
+import { DemoUjicoba } from "./demo-ujicoba"
 
 import { ActivityList } from "./activity-list"
 import { EVENTS, EVENT_LABELS, type EventKey } from "@/lib/db/schema"
@@ -34,14 +35,17 @@ export function CommitteeHome({
   activity,
   classStats,
   onExit,
+  demoActive = false,
 }: {
   recaps: Record<EventKey, RecapRow[]>
   accounts: AccountRow[]
   activity?: ActivityRow[]
   classStats?: ClassStat[]
   onExit?: () => void
+  /** Panitia sedang membuka sesi Ujicoba akun demo. */
+  demoActive?: boolean
 }) {
-  const [section, setSection] = useState<DashSection>("beranda")
+  const [section, setSection] = useState<DashSection>(demoActive ? "ujicoba" : "beranda")
   const [selected, setSelected] = useState<EventKey | null>(null)
   const [tab, setTab] = useState<"verifikasi" | "rekap">("verifikasi")
   const router = useRouter()
@@ -392,101 +396,15 @@ export function CommitteeHome({
   /* ---------- Daftar peserta ---------- */
   const peserta = (
     <div className="w-full">
-      <AccountsSection
-        accounts={accounts}
-        onUjicoba={(a) => {
-          setUjicobaNama(a.nama)
-          setUjicobaKelas(a.kelas)
-          setUjicobaNomor(a.nomorPresensi)
-          setSection("ujicoba")
-        }}
-      />
+      <AccountsSection accounts={accounts} />
     </div>
   )
 
   /* ---------- Pengaturan ---------- */
-  /* ---- Ujicoba Akun Peserta: simulasi tampilan peserta 1:1 untuk panitia.
-     Kode QR dibuat acak di sisi klien (tidak disimpan ke DB, tidak akan bisa
-     "terverifikasi" karena tidak ada baris attendance-nya) — murni uji fitur. */
-  const ujicobaCodes = useState(() =>
-    Object.fromEntries(EVENTS.map((e) => [e, { code: generate16DigitCode(), verifiedAt: null }]))
-  )[0] as Record<EventKey, { code: string; verifiedAt: Date | string | null }>
-
-  /* Ganti nama uji saat akun peserta asli diklik dari Daftar Peserta */
-  const [ujicobaNama, setUjicobaNama] = useState("CONTOH PESERTA")
-  const [ujicobaKelas, setUjicobaKelas] = useState("XII IPA 1")
-  const [ujicobaNomor, setUjicobaNomor] = useState(1)
-  const [ujiTab, setUjiTab] = useState<"dashboard" | "pengaturan" | "login">("dashboard")
-
-  const ujicoba = (
-    <div className="grid gap-4">
-      <GlassCard className="border-[var(--purple)]/30 p-4">
-        <div className="flex items-start gap-3">
-          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--purple),#b78ff0)] text-white shadow-lg shadow-[var(--purple)]/25">
-            <FlaskConical className="h-4.5 w-4.5" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">Mode Ujicoba — tampilan akun peserta</p>
-            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-              Pratinjau persis seperti yang dilihat peserta, termasuk menu Pengaturan &amp; alur Lupa Password di halaman login. QR bersifat sementara dan tidak tercatat ke sistem. Tidak ada tombol Keluar karena kamu tetap di dashboard panitia.
-            </p>
-          </div>
-        </div>
-      </GlassCard>
-
-      {/* Navigasi bagian mana yang mau diuji */}
-      <div className="flex flex-wrap gap-2">
-        {([
-          ["dashboard", "Dashboard Peserta"],
-          ["pengaturan", "Pengaturan & Reset"],
-          ["login", "Halaman Login / Lupa Password"],
-        ] as const).map(([k, label]) => (
-          <button
-            key={k}
-            onClick={() => setUjiTab(k)}
-            className={
-              "lift rounded-xl border px-3 py-1.5 text-xs font-semibold transition active:scale-95 " +
-              (ujiTab === k
-                ? "border-transparent bg-gradient-to-r from-[var(--purple)] to-[var(--blue)] text-white shadow-md"
-                : "border-[var(--line)] bg-white/[0.04] text-muted-foreground hover:border-[var(--purple)]/50")
-            }
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {ujiTab === "dashboard" && (
-        <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/[0.02]">
-          <ParticipantHome
-            nama={ujicobaNama}
-            kelas={ujicobaKelas}
-            nomorPresensi={ujicobaNomor}
-            codes={ujicobaCodes}
-          />
-        </div>
-      )}
-
-      {ujiTab === "pengaturan" && (
-        <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/[0.02] p-3 sm:p-4">
-          <p className="mb-3 inline-flex items-center gap-1.5 rounded-lg bg-[var(--purple)]/15 px-2.5 py-1 text-[11px] font-semibold text-[var(--purple)]">
-            <FlaskConical className="h-3.5 w-3.5" /> Semua aksi di sini aman — hanya simulasi, data asli tidak berubah
-          </p>
-          <SettingsPanel role="peserta" nama={ujicobaNama} dryRun />
-        </div>
-      )}
-
-      {ujiTab === "login" && (
-        <div className="overflow-hidden rounded-2xl border border-dashed border-[var(--line)] bg-white/[0.02]">
-          <Suspense fallback={<div className="h-96 animate-pulse bg-white/[0.03]" />}>
-            <UjiCobaContext.Provider value={true}>
-              <PesertaAuth onBack={() => setUjiTab("dashboard")} />
-            </UjiCobaContext.Provider>
-          </Suspense>
-        </div>
-      )}
-    </div>
-  )
+  /* ---------- Ujicoba Akun Peserta: AKUN DEMO sungguhan yang bisa diuji
+     end-to-end (login, QR, scan, reset password, ajukan/tinjau permintaan)
+     tanpa mengganggu peserta asli. Panel pengaturannya ada di ./demo-ujicoba. */
+  const ujicoba = <DemoUjicoba demoActive={demoActive} />
 
   const pengaturan = (
     <div className="w-full">

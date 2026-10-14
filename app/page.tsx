@@ -3,11 +3,18 @@ import { AppRoot } from "@/components/app-root"
 import { getCurrentParticipant, isCommittee } from "@/lib/session"
 import { getMyCodes, getRecapForEvent, getAllParticipants, getAllActivity, getClassStats, type RecapRow } from "@/lib/queries"
 import { EVENTS, type EventKey } from "@/lib/db/schema"
+import { DEMO_KELAS, DEMO_NOMOR } from "@/lib/demo"
 
 export const dynamic = "force-dynamic"
 
 export default async function Page() {
   const [participant, committee] = await Promise.all([getCurrentParticipant(), isCommittee()])
+
+  // Mode Ujicoba: panitia yang membuka sesi demo melihat dashboard peserta
+  // AKUN DEMO yang asli — semua fitur dapat dicoba end-to-end tanpa
+  // mengganggu peserta mana pun. Sesi panitia tetap tersimpan di cookie
+  // sendiri, jadi menutup demo cukup menghapus cookie peserta saja.
+  const demoActive = Boolean(committee && participant && participant.kelas === DEMO_KELAS && participant.nomorPresensi === DEMO_NOMOR)
 
   let codes = null
   if (participant) {
@@ -40,12 +47,15 @@ export default async function Page() {
       <div className="flex w-full flex-1 items-start justify-center">
         <AppRoot
           participant={
-            participant
-              ? { nama: participant.nama, kelas: participant.kelas, nomorPresensi: participant.nomorPresensi }
-              : null
+            demoActive
+              ? null // sesi demo: jangan tampilkan dashboard peserta biasa — AppRoot akan menampilkan panel Akun Demo
+              : participant
+                ? { nama: participant.nama, kelas: participant.kelas, nomorPresensi: participant.nomorPresensi }
+                : null
           }
-          codes={codes}
+          codes={demoActive ? null : codes}
           committee={committee}
+          demoActive={demoActive}
           recaps={recaps}
           accounts={accounts}
           activity={activity}

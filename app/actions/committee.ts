@@ -186,6 +186,7 @@ export async function getPendingResetHelp(): Promise<HelpRequest[]> {
     if (!r.detail?.startsWith(HELP_PREFIX)) continue
     const [kode, nama, kelas, nomor, phone] = r.detail.slice(HELP_PREFIX.length).split("::")
     if (!kode || !nama || !kelas || !nomor || !phone) continue
+    if (kelas === "DEMO") continue // permintaan dari akun demo tidak ditinjau panitia
     const key = `${kelas}-${nomor}`
     if (seen.has(key)) continue
     seen.add(key)
