@@ -133,8 +133,11 @@ export async function resetPasswordWithKode(formData: FormData): Promise<ActionR
     .limit(1)
 
   if (!p) return { ok: false, error: "Akun tidak ditemukan." }
-  if (p.kodeUnik !== kodeUnik)
-    return { ok: false, error: "Kode unik tidak cocok." }
+  // Verifikasi: kode unik ATAU password lama yang paling update (salah satu cukup).
+  const byKode = p.kodeUnik === kodeUnik
+  const byPassword = verifyPassword(kodeUnik, p.passwordHash)
+  if (!byKode && !byPassword)
+    return { ok: false, error: "Kode unik / password lama tidak cocok." }
 
   await db
     .update(participants)

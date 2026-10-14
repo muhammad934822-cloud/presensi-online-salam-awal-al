@@ -2,11 +2,13 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, ShieldCheck, ScanLine, Users, Activity, Home , Lightbulb, History, BellRing } from "lucide-react"
+import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, ShieldCheck, ScanLine, Users, Activity, Home , Lightbulb, History, BellRing, FlaskConical, QrCode } from "lucide-react"
 import { GlassCard } from "./ui-kit"
 import { VerifySubmenu } from "./committee/verify-submenu"
 import { RecapSubmenu } from "./committee/recap-submenu"
 import { AccountsSection } from "./committee/accounts-section"
+import { ParticipantHome } from "./participant-home"
+import { generate16DigitCode } from "@/lib/crypto"
 import { DashboardShell, type DashSection } from "./dashboard-shell"
 import { SettingsPanel } from "./settings-panel"
 import { ActivityList } from "./activity-list"
@@ -369,11 +371,57 @@ export function CommitteeHome({
   /* ---------- Daftar peserta ---------- */
   const peserta = (
     <div className="w-full">
-      <AccountsSection accounts={accounts} />
+      <AccountsSection
+        accounts={accounts}
+        onUjicoba={(a) => {
+          setUjicobaNama(a.nama)
+          setUjicobaKelas(a.kelas)
+          setUjicobaNomor(a.nomorPresensi)
+          setSection("ujicoba")
+        }}
+      />
     </div>
   )
 
   /* ---------- Pengaturan ---------- */
+  /* ---- Ujicoba Akun Peserta: simulasi tampilan peserta 1:1 untuk panitia.
+     Kode QR dibuat acak di sisi klien (tidak disimpan ke DB, tidak akan bisa
+     "terverifikasi" karena tidak ada baris attendance-nya) — murni uji fitur. */
+  const ujicobaCodes = useState(() =>
+    Object.fromEntries(EVENTS.map((e) => [e, { code: generate16DigitCode(), verifiedAt: null }]))
+  )[0] as Record<EventKey, { code: string; verifiedAt: Date | string | null }>
+
+  /* Ganti nama uji saat akun peserta asli diklik dari Daftar Peserta */
+  const [ujicobaNama, setUjicobaNama] = useState("CONTOH PESERTA")
+  const [ujicobaKelas, setUjicobaKelas] = useState("XII IPA 1")
+  const [ujicobaNomor, setUjicobaNomor] = useState(1)
+
+  const ujicoba = (
+    <div className="grid gap-4">
+      <GlassCard className="border-[var(--purple)]/30 p-4">
+        <div className="flex items-start gap-3">
+          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--purple),#b78ff0)] text-white shadow-lg shadow-[var(--purple)]/25">
+            <FlaskConical className="h-4.5 w-4.5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">Mode Ujicoba — tampilan akun peserta</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+              Pratinjau persis seperti yang dilihat peserta (bukan data asli). QR bersifat sementara dan tidak tercatat ke sistem. Tidak ada tombol Keluar karena kamu tetap di dashboard panitia.
+            </p>
+          </div>
+        </div>
+      </GlassCard>
+      <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/[0.02]">
+        <ParticipantHome
+          nama={ujicobaNama}
+          kelas={ujicobaKelas}
+          nomorPresensi={ujicobaNomor}
+          codes={ujicobaCodes}
+        />
+      </div>
+    </div>
+  )
+
   const pengaturan = (
     <div className="w-full">
       <SettingsPanel role="panitia" />
@@ -458,7 +506,7 @@ export function CommitteeHome({
   return (
     <div className="w-full">
       <DashboardShell
-          sections={["beranda", "presensi", "peserta", "pengaturan"]}
+          sections={["beranda", "presensi", "peserta", "ujicoba", "pengaturan"]}
           active={section}
           onNavigate={(s) => {
             setSection(s)
@@ -490,6 +538,7 @@ export function CommitteeHome({
             {section === "beranda" && beranda}
             {section === "presensi" && presensi}
             {section === "peserta" && peserta}
+            {section === "ujicoba" && ujicoba}
             {section === "pengaturan" && pengaturan}
             {section === "riwayat" && riwayat}
             {section === "kelas" && kelasDetail}

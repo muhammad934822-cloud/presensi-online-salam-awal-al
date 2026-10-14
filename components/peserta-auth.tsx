@@ -34,15 +34,22 @@ import {
 } from "@/app/actions/participant"
 import { playApproved, playRejected } from "@/lib/sound"
 
-type Mode = "choice" | "signup" | "login" | "reset" | "help" | "review"
+type Mode = "choice" | "signup" | "login" | "reset" | "help"
 
 const MODE_TITLES: Record<Mode, { title: string; subtitle: string }> = {
   choice: { title: "Peserta", subtitle: "Pilih aksi untuk melanjutkan" },
   signup: { title: "Daftar Akun", subtitle: "Lengkapi identitas kamu untuk membuat akun presensi" },
   login: { title: "Masuk Akun", subtitle: "Gunakan kelas, nomor presensi, dan password kamu" },
   reset: { title: "Lupa Password?", subtitle: "Pilih cara memulihkan akses akun kamu" },
-  help: { title: "Minta Bantu Panitia", subtitle: "Kirim permintaan reset — password akan direset menjadi 12345678" },
-  review: { title: "Tinjau Permintaan", subtitle: "Masukkan kode tinjau 6 karakter untuk memantau status permintaanmu" },
+  help: { title: "Lupa Kode Unik?", subtitle: "Ajukan permintaan reset atau tinjau status permintaanmu" },
+}
+
+/** Judul dinamis per cabang layar "Lupa Kode Unik?" */
+function helpTitle(helpBranch: "ajukan" | "tinjau" | null, helpSent: unknown) {
+  if (helpSent) return { title: "Permintaan Terkirim", subtitle: "Simpan kode tinjau kamu — panitia memproses maksimal 60 menit" }
+  if (helpBranch === "ajukan") return { title: "Ajukan Permintaan Reset", subtitle: "Panitia akan memverifikasi nomor HP-mu sebelum mereset" }
+  if (helpBranch === "tinjau") return { title: "Tinjau Permintaan Reset", subtitle: "Masukkan kode tinjau 6 karakter untuk memantau status" }
+  return { title: "Lupa Kode Unik?", subtitle: "Ajukan permintaan reset atau tinjau status permintaanmu" }
 }
 
 /** Daftar prosedur bernomor — dipakai di form kirim & halaman hasil. */
@@ -175,6 +182,8 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
   // ---- Alur "Lupa Kode Unik" (permintaan bantu ke panitia) ----
   type HelpState = { kode: string; maskedPhone: string; waitedMinutes: number; status: "pending" | "approved" | "ignored" }
   const [helpSent, setHelpSent] = useState<HelpState | null>(null)
+  // Cabang layar "Lupa Kode Unik?": dua cabang dulu (ajukan / tinjau), baru form-nya.
+  const [helpBranch, setHelpBranch] = useState<"ajukan" | "tinjau" | null>(null)
 
   // Cabang form reset mandiri (kode unik) — default tertutup di layar dua cabang.
   const [showResetForm, setShowResetForm] = useState(false)
@@ -216,7 +225,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
   }, [helpSent?.kode, mode])
 
   useEffect(() => {
-    if (!reviewResult || mode !== "review") return
+    if (!reviewResult || mode !== "help" || helpBranch !== "tinjau") return
     let cancelled = false
     const iv = setInterval(async () => {
       try {
@@ -243,7 +252,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
     })
   }
 
-  const heading = MODE_TITLES[mode]
+  const heading = mode === "help" ? helpTitle(helpBranch, helpSent) : MODE_TITLES[mode]
 
   return (
     <div className="mx-auto w-full max-w-md">
@@ -259,7 +268,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
           <span className="relative mx-auto mb-4 inline-block">
             <span className="conic-ring absolute -inset-1.5 rounded-3xl opacity-60 blur-[3px]" aria-hidden="true" />
             <span className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--gold),#e8c87a)] text-[oklch(0.2_0.03_255)] shadow-xl shadow-[var(--gold)]/25">
-              {mode === "reset" ? <KeyRound className="h-8 w-8" /> : mode === "login" ? <LogIn className="h-8 w-8" /> : mode === "review" ? <Eye className="h-8 w-8" /> : mode === "help" ? <Inbox className="h-8 w-8" /> : <UserPlus className="h-8 w-8" />}
+              {mode === "reset" ? <KeyRound className="h-8 w-8" /> : mode === "login" ? <LogIn className="h-8 w-8" /> : mode === "help" ? <Inbox className="h-8 w-8" /> : <UserPlus className="h-8 w-8" />}
             </span>
           </span>
           <h2 className="font-serif text-2xl font-semibold text-foreground">{heading.title}</h2>
@@ -297,25 +306,43 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
         )}
 
         {mode === "reset" && !showResetForm && (
-          // ---- Dua cabang: kirim permintaan baru ATAU tinjau yang sudah ada ----
+          // ---- Reset mandiri dulu; di bawahnya link samar "Lupa Kode Unik?" ----
+          <div className="grid gap-3">
+            <GradientButton onClick={() => setShowResetForm(true)}>
+              <KeyRound className="h-5 w-5" /> Reset Password
+              <span className="ml-auto rounded-full bg-[var(--gold)]/15 px-2 py-0.5 text-[10px] font-bold tabular-nums text-[var(--gold)]">kode unik</span>
+              <ChevronRight className="ml-1 h-4 w-4 opacity-60" />
+            </GradientButton>
+            <button
+              type="button"
+              onClick={() => { setError(null); setNotice(null); setHelpSent(null); setReviewKode(""); setReviewResult(null); setMode("help") }}
+              className="text-center text-xs text-muted-foreground/70 underline decoration-dotted underline-offset-4 transition hover:text-[var(--gold)]"
+            >
+              Lupa Kode Unik? →
+            </button>
+          </div>
+        )}
+
+        {mode === "help" && !helpBranch && !helpSent && !reviewResult && (
+          // ---- Dua cabang: ajukan permintaan baru ATAU tinjau yang sudah ada ----
           <div className="grid gap-3">
             <p className="text-center text-xs leading-relaxed text-muted-foreground">
-              Reset mandiri dengan kode unik, atau minta bantuan panitia.
+              Panitia akan memverifikasi nomor HP-mu sebelum mereset akses akun.
             </p>
-            <GradientButton onClick={() => setShowResetForm(true)}>
-              <KeyRound className="h-5 w-5" /> Permintaan Reset Password
+            <GradientButton onClick={() => setHelpBranch("ajukan")}>
+              <Inbox className="h-5 w-5" /> Ajukan Permintaan Reset Password
               <ChevronRight className="ml-auto h-4 w-4 opacity-60" />
             </GradientButton>
-            <GhostButton onClick={() => setMode("review")}>
-              <Eye className="h-5 w-5" /> Tinjau Permintaan
+            <GhostButton onClick={() => setHelpBranch("tinjau")}>
+              <Eye className="h-5 w-5" /> Tinjau Permintaan Reset Password
               <span className="ml-auto rounded-full bg-[var(--gold)]/15 px-2 py-0.5 text-[10px] font-bold tabular-nums text-[var(--gold)]">kode 6 karakter</span>
             </GhostButton>
             <button
               type="button"
-              onClick={() => { setError(null); setNotice(null); setHelpSent(null); setMode("help") }}
-              className="text-center text-xs text-muted-foreground/80 underline decoration-dotted underline-offset-4 transition hover:text-[var(--gold)]"
+              onClick={() => { setError(null); setNotice(null); setHelpBranch(null); setMode("reset") }}
+              className="mt-1 text-center text-xs text-muted-foreground/70 underline decoration-dotted underline-offset-4 transition hover:text-foreground"
             >
-              Lupa Kode Unik? Minta bantu panitia →
+              ← Kembali ke reset mandiri
             </button>
           </div>
         )}
@@ -438,18 +465,26 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
           </form>
         )}
 
-        {mode === "reset" && (
+        {mode === "reset" && showResetForm && (
           <form
             onSubmit={(e) => {
               e.preventDefault()
               const form = e.currentTarget
               handle(resetPasswordWithKode, form, () => {
                 setNotice("Password berhasil direset. Silakan login dengan password baru.")
+                setShowResetForm(false)
                 setMode("login")
               })
             }}
             className="grid gap-4"
           >
+            <button
+              type="button"
+              onClick={() => setShowResetForm(false)}
+              className="-mt-1 flex items-center gap-1 self-start text-xs text-muted-foreground/70 underline decoration-dotted underline-offset-4 transition hover:text-foreground"
+            >
+              <ChevronRight className="h-3.5 w-3.5 rotate-180" /> Kembali
+            </button>
             <div className="grid grid-cols-2 gap-3">
               <SelectField label="Kelas" name="kelas" required defaultValue="">
                 <option value="" disabled>
@@ -488,18 +523,18 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
           </form>
         )}
 
-        {mode === "help" &&
+        {mode === "help" && helpBranch !== "tinjau" &&
           (helpSent ? (
             // ---- Indikator: permintaan sedang diproses panitia ----
             <div className="grid gap-4">
               <HelpResult kode={helpSent.kode} maskedPhone={helpSent.maskedPhone} waitedMinutes={helpSent.waitedMinutes} status={helpSent.status} />
               {helpSent.status === "pending" && (
-                <GhostButton onClick={() => { setHelpSent(null); setShowResetForm(false); setMode("reset") }}>
+                <GhostButton onClick={() => { setHelpSent(null); setHelpBranch(null); setShowResetForm(false); setMode("reset") }}>
                   <ChevronRight className="mr-auto h-4 w-4 rotate-180" /> Coba reset mandiri dengan kode unik
                 </GhostButton>
               )}
             </div>
-          ) : (
+          ) : helpBranch === "ajukan" ? (
             // ---- Form kirim permintaan bantu ----
             <form
               onSubmit={(e) => {
@@ -524,6 +559,13 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
               }}
               className="grid gap-4"
             >
+              <button
+                type="button"
+                onClick={() => { setError(null); setHelpBranch(null) }}
+                className="-mt-1 flex items-center gap-1 self-start text-xs text-muted-foreground/70 underline decoration-dotted underline-offset-4 transition hover:text-foreground"
+              >
+                <ChevronRight className="h-3.5 w-3.5 rotate-180" /> Kembali
+              </button>
               <ProsedurList />
               <div className="grid grid-cols-2 gap-3">
                 <SelectField label="Kelas" name="kelas" required defaultValue="">
@@ -561,9 +603,9 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
                 )}
               </GradientButton>
             </form>
-          ))}
+          ) : null)}
 
-        {mode === "review" && (
+        {mode === "help" && helpBranch === "tinjau" && (
           reviewResult ? (
             // ---- Hasil tinjauan via kode 6 karakter ----
             <div className="grid gap-4">
@@ -582,7 +624,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
                     if (res.ok) {
                       setReviewResult(null)
                       setNotice("Permintaan dibatalkan. Kamu bisa mengirim baru kapan saja.")
-                      setMode("reset")
+                      setHelpBranch(null)
                     } else {
                       setError(res.error ?? "Gagal membatalkan permintaan.")
                     }
@@ -595,13 +637,15 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
               <GhostButton onClick={() => { setReviewResult(null); setReviewKode("") }}>
                 <ChevronRight className="mr-auto h-4 w-4 rotate-180" /> Cek kode lain
               </GhostButton>
+              <GhostButton onClick={() => { setReviewResult(null); setReviewKode(""); setHelpBranch(null) }}>
+                <ChevronRight className="mr-auto h-4 w-4 rotate-180" /> Kembali ke menu Lupa Kode Unik
+              </GhostButton>
             </div>
           ) : (
             // ---- Form masukkan kode tinjau ----
             <form
               onSubmit={(e) => {
                 e.preventDefault()
-                e.currentTarget
                 setError(null)
                 startTransition(async () => {
                   const res = await checkResetHelpByKode(reviewKode)

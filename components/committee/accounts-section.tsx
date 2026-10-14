@@ -2,13 +2,20 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Trash2, Users, AlertTriangle, RotateCcw } from "lucide-react"
+import { Trash2, Users, AlertTriangle, RotateCcw, FlaskConical } from "lucide-react"
 import type { AccountRow } from "@/lib/queries"
 import { isActiveNow, timeAgo } from "@/lib/time"
 import { deleteParticipant } from "@/app/actions/committee"
 import { PasswordResetButton } from "./password-reset-button"
 
-export function AccountsSection({ accounts }: { accounts: AccountRow[] }) {
+export function AccountsSection({
+  accounts,
+  onUjicoba,
+}: {
+  accounts: AccountRow[]
+  /** Opsional: buka mode Ujicoba akun ini (simulasi tampilan peserta) */
+  onUjicoba?: (a: AccountRow) => void
+}) {
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [query, setQuery] = useState("")
   const [pending, startTransition] = useTransition()
@@ -105,6 +112,16 @@ export function AccountsSection({ accounts }: { accounts: AccountRow[] }) {
 
                 {/* Grup aksi: turun rapi ke baris baru jika nama panjang */}
                 <span className="ml-auto flex shrink-0 items-center gap-1.5 lg:ml-0">
+                  {onUjicoba && (
+                    <button
+                      onClick={() => onUjicoba(a)}
+                      title={`Ujicoba tampilan akun ${a.nama}`}
+                      aria-label={`Ujicoba tampilan akun ${a.nama}`}
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--line)] bg-white/[0.04] text-foreground/70 transition hover:border-[var(--purple)]/60 hover:text-[var(--purple)] active:scale-95"
+                    >
+                      <FlaskConical className="h-4 w-4" />
+                    </button>
+                  )}
                   <PasswordResetButton account={a} />
 
                   {confirmId === a.id ? (

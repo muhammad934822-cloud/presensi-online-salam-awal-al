@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import type { ReactNode } from "react"
-import { LayoutGrid, LayoutDashboard, Settings, X, Clock } from "lucide-react"
+import { LayoutGrid, LayoutDashboard, Settings, X, Clock, FlaskConical } from "lucide-react"
 import { ThemeToggle } from "./theme-provider"
 import { BrandHeader } from "./brand-header"
 
@@ -58,12 +58,13 @@ export function LiveClock({ className = "", size = "sm" }: { className?: string;
   )
 }
 
-export type DashSection = "beranda" | "presensi" | "peserta" | "pengaturan" | "riwayat" | "kelas"
+export type DashSection = "beranda" | "presensi" | "peserta" | "pengaturan" | "riwayat" | "kelas" | "ujicoba"
 
 const NAV: { key: DashSection; label: string; icon: typeof LayoutGrid; desc: string }[] = [
   { key: "beranda", label: "Beranda", icon: LayoutGrid, desc: "Ringkasan & pilihan kegiatan" },
   { key: "presensi", label: "Presensi", icon: LayoutDashboard, desc: "QR / scan kehadiran" },
   { key: "peserta", label: "Daftar Peserta", icon: LayoutDashboard, desc: "Akun & data peserta" },
+  { key: "ujicoba", label: "Ujicoba Akun Peserta", icon: FlaskConical, desc: "Simulasi tampilan akun peserta" },
   { key: "pengaturan", label: "Pengaturan", icon: Settings, desc: "Tema, nama, lainnya" },
 ]
 
