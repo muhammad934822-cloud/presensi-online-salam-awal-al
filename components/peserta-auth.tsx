@@ -257,7 +257,18 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
   return (
     <div className="mx-auto w-full max-w-md">
       <button
-        onClick={() => (mode === "choice" ? onBack() : setMode("choice"))}
+        onClick={() => {
+          // Back selalu kembali satu level ke cabang UTAMA, bukan melompat acak.
+          setError(null)
+          setNotice(null)
+          if (mode === "choice") return onBack()
+          if (mode === "reset" && showResetForm) return setShowResetForm(false)
+          if (mode === "help" && helpSent) return setHelpSent(null)
+          if (mode === "help" && reviewResult) return setReviewResult(null)
+          if (mode === "help" && helpBranch) { setHelpBranch(null); return }
+          if (mode === "help") return setMode("reset")
+          setMode("choice")
+        }}
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-foreground/70 transition hover:-translate-x-0.5 hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" /> Kembali
@@ -308,14 +319,14 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
         {mode === "reset" && !showResetForm && (
           // ---- Reset mandiri dulu; di bawahnya link samar "Lupa Kode Unik?" ----
           <div className="grid gap-3">
-            <GradientButton onClick={() => setShowResetForm(true)}>
+            <GradientButton onClick={() => { setError(null); setNotice(null); setShowResetForm(true) }}>
               <KeyRound className="h-5 w-5" /> Reset Password
               <span className="ml-auto rounded-full bg-[var(--gold)]/15 px-2 py-0.5 text-[10px] font-bold tabular-nums text-[var(--gold)]">kode unik</span>
               <ChevronRight className="ml-1 h-4 w-4 opacity-60" />
             </GradientButton>
             <button
               type="button"
-              onClick={() => { setError(null); setNotice(null); setHelpSent(null); setReviewKode(""); setReviewResult(null); setMode("help") }}
+              onClick={() => { setError(null); setNotice(null); setHelpSent(null); setReviewKode(""); setReviewResult(null); setHelpBranch(null); setMode("help") }}
               className="text-center text-xs text-muted-foreground/70 underline decoration-dotted underline-offset-4 transition hover:text-[var(--gold)]"
             >
               Lupa Kode Unik? →
@@ -329,11 +340,11 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
             <p className="text-center text-xs leading-relaxed text-muted-foreground">
               Panitia akan memverifikasi nomor HP-mu sebelum mereset akses akun.
             </p>
-            <GradientButton onClick={() => setHelpBranch("ajukan")}>
+            <GradientButton onClick={() => { setError(null); setNotice(null); setHelpBranch("ajukan") }}>
               <Inbox className="h-5 w-5" /> Ajukan Permintaan Reset Password
               <ChevronRight className="ml-auto h-4 w-4 opacity-60" />
             </GradientButton>
-            <GhostButton onClick={() => setHelpBranch("tinjau")}>
+            <GhostButton onClick={() => { setError(null); setNotice(null); setHelpBranch("tinjau") }}>
               <Eye className="h-5 w-5" /> Tinjau Permintaan Reset Password
               <span className="ml-auto rounded-full bg-[var(--gold)]/15 px-2 py-0.5 text-[10px] font-bold tabular-nums text-[var(--gold)]">kode 6 karakter</span>
             </GhostButton>
@@ -523,18 +534,7 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
           </form>
         )}
 
-        {mode === "help" && helpBranch !== "tinjau" &&
-          (helpSent ? (
-            // ---- Indikator: permintaan sedang diproses panitia ----
-            <div className="grid gap-4">
-              <HelpResult kode={helpSent.kode} maskedPhone={helpSent.maskedPhone} waitedMinutes={helpSent.waitedMinutes} status={helpSent.status} />
-              {helpSent.status === "pending" && (
-                <GhostButton onClick={() => { setHelpSent(null); setHelpBranch(null); setShowResetForm(false); setMode("reset") }}>
-                  <ChevronRight className="mr-auto h-4 w-4 rotate-180" /> Coba reset mandiri dengan kode unik
-                </GhostButton>
-              )}
-            </div>
-          ) : helpBranch === "ajukan" ? (
+        {mode === "help" && helpBranch === "ajukan" && !helpSent && (
             // ---- Form kirim permintaan bantu ----
             <form
               onSubmit={(e) => {
@@ -603,10 +603,20 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
                 )}
               </GradientButton>
             </form>
-          ) : null)}
+        )}
 
-        {mode === "help" && helpBranch === "tinjau" && (
-          reviewResult ? (
+        {/* Indikator hasil permintaan — tampil di cabang mana pun (kode tinjau, proses, telepon >60 mnt) */}
+        {mode === "help" && helpSent && (
+          <div className="grid gap-4">
+            <HelpResult kode={helpSent.kode} maskedPhone={helpSent.maskedPhone} waitedMinutes={helpSent.waitedMinutes} status={helpSent.status} />
+            <GhostButton onClick={() => { setHelpSent(null); setHelpBranch(null) }}>
+              <ChevronRight className="mr-auto h-4 w-4 rotate-180" /> Kembali ke menu Lupa Kode Unik
+            </GhostButton>
+          </div>
+        )}
+
+        {/* ---- Hasil tinjauan via kode 6 karakter (tampil di cabang mana pun) ---- */}
+        {mode === "help" && reviewResult && (
             // ---- Hasil tinjauan via kode 6 karakter ----
             <div className="grid gap-4">
               <HelpResult
@@ -641,7 +651,9 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
                 <ChevronRight className="mr-auto h-4 w-4 rotate-180" /> Kembali ke menu Lupa Kode Unik
               </GhostButton>
             </div>
-          ) : (
+        )}
+
+        {mode === "help" && helpBranch === "tinjau" && !reviewResult && (
             // ---- Form masukkan kode tinjau ----
             <form
               onSubmit={(e) => {
@@ -693,7 +705,6 @@ export function PesertaAuth({ onBack }: { onBack: () => void }) {
                 )}
               </GradientButton>
             </form>
-          )
         )}
       </GlassCard>
     </div>

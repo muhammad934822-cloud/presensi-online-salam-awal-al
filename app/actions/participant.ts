@@ -255,8 +255,13 @@ export async function requestResetHelp(formData: FormData): Promise<ActionResult
   if (!p) return { ok: false, error: "Akun tidak ditemukan. Periksa kelas & nomor presensi." }
 
   const existing = await readAllHelpRecords()
-  const active = existing.find((h) => h.kelas === kelas && h.nomor === nomorPresensi)
+  const active = existing.find(
+    (h) => h.kelas === kelas && h.nomor === nomorPresensi && h.status === "pending",
+  )
   if (active) {
+    // Masih ada permintaan yang SEDANG diproses — tampilkan statusnya,
+    // bukan menolak. Jika sudah disetujui/ditolak/dibatalkan, peserta di
+    // bawah ini bisa mengirim permintaan baru lagi.
     return {
       ok: true,
       kodeTinjau: active.kode,
