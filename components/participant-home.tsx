@@ -284,23 +284,13 @@ export function ParticipantHome({
             setSection(s)
             if (s === "presensi") setSelected(null)
           }}
+          onExit={onExit}
           headerLeft={
-            <div className="min-w-0 flex items-center justify-between gap-2">
-              <div className="min-w-0">
-              <p className="break-words text-balance font-serif text-lg font-semibold leading-snug text-foreground">{nama}</p>
-              <p className="truncate text-xs text-muted-foreground">
+            <div className="min-w-0">
+              <p className="break-words text-balance font-serif text-base font-semibold leading-snug text-foreground">{nama}</p>
+              <p className="text-xs text-muted-foreground">
                 {kelas} · No. {nomorPresensi} · {verifiedCount}/{EVENTS.length} hadir
               </p>
-              </div>
-              {onExit && (
-                <button
-                  onClick={onExit}
-                  title="Kembali ke halaman utama"
-                  className="inline-flex h-9 shrink-0 items-center gap-1 rounded-xl border border-[var(--line)] bg-white/[0.05] px-2.5 text-xs text-foreground/80 transition hover:border-[var(--gold)]/50 hover:bg-white/10 active:scale-95"
-                >
-                  <Home className="h-3.5 w-3.5" /> Utama
-                </button>
-              )}
             </div>
           }
         >

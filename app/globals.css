@@ -425,6 +425,24 @@
 .pulse-dot { animation: dot-pulse 2s ease-in-out infinite; }
 
 /* Rainbow sweep band (latar rainbow pelan) */
+/* Aliran pelangi dinamis: gradient 7 warna bergerak mulus tanpa henti
+   (background-position di-scroll terus, bukan bolak-balik) */
+@keyframes rainbow-flow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: -200% 50%; }
+}
+.rainbow-flow-text {
+  background-image: linear-gradient(
+    90deg,
+    #f87171, #fb923c, #facc15, #4ade80, #38bdf8, #818cf8, #e879f9,
+    #f87171, #fb923c, #facc15, #4ade80, #38bdf8, #818cf8, #e879f9
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rainbow-flow 6s linear infinite;
+}
 @keyframes rainbow-drift {
   0%   { background-position: 0% 50%; }
   50%  { background-position: 100% 50%; }

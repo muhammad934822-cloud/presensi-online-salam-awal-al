@@ -14,7 +14,7 @@ export function BrandHeader({ compact = false }: { compact?: boolean }) {
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-gradient-gold">Presensi Online</p>
         <h1 className={compact ? "font-serif text-lg font-semibold tracking-tight" : "font-serif text-2xl font-semibold tracking-tight sm:text-3xl"}>
-          Salam Awal <span className="text-gradient-gold">Al Uswah</span>
+          Salam Awal <span className="rainbow-flow-text">Al Uswah</span>
         </h1>
       </div>
     </header>

@@ -69,7 +69,7 @@ export function CommitteeHome({
   }
   useEffect(() => {
     void refreshHelp()
-    helpTimer.current = setInterval(() => { if (!document.hidden) void refreshHelp() }, 15_000)
+    helpTimer.current = setInterval(() => { if (!document.hidden) void refreshHelp() }, 3_000)
     return () => { if (helpTimer.current) clearInterval(helpTimer.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -496,26 +496,16 @@ export function CommitteeHome({
             setSection(s)
             if (s === "presensi") setSelected(null)
           }}
+          onExit={onExit}
           headerLeft={
-            <div className="flex min-w-0 items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="flex items-center gap-2 truncate font-serif text-lg font-semibold text-foreground">
-                  <ShieldCheck className="h-5 w-5 shrink-0 text-[var(--gold)]" />
-                  <span className="hidden sm:inline">Dashboard Panitia</span>
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {accounts.length} akun · {totalVerified}/{totalShown || 0} kehadiran tervalidasi
-                </p>
-              </div>
-              {onExit && (
-                <button
-                  onClick={onExit}
-                  title="Kembali ke halaman utama"
-                  className="inline-flex h-9 shrink-0 items-center gap-1 rounded-xl border border-[var(--line)] bg-white/[0.05] px-2.5 text-xs text-foreground/80 transition hover:border-[var(--gold)]/50 hover:bg-white/10 active:scale-95"
-                >
-                  <Home className="h-3.5 w-3.5" /> Utama
-                </button>
-              )}
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="flex items-center gap-2 font-serif text-base font-semibold leading-snug text-foreground">
+                <ShieldCheck className="h-4.5 w-4.5 shrink-0 text-[var(--gold)]" />
+                <span className="break-words">Dashboard Panitia</span>
+              </p>
+              <p className="w-full text-xs text-muted-foreground sm:w-auto">
+                {accounts.length} akun · {totalVerified}/{totalShown || 0} kehadiran tervalidasi
+              </p>
             </div>
           }
         >

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import type { ReactNode } from "react"
-import { LayoutGrid, LayoutDashboard, Settings, X, Clock, FlaskConical } from "lucide-react"
+import { LayoutGrid, LayoutDashboard, Settings, X, Clock, FlaskConical, Home } from "lucide-react"
 import { ThemeToggle } from "./theme-provider"
 import { BrandHeader } from "./brand-header"
 
@@ -77,6 +77,7 @@ export function DashboardShell({
   active,
   onNavigate,
   headerLeft,
+  onExit,
   children,
 }: {
   /** daftar section yang tersedia untuk peran ini */
@@ -84,6 +85,8 @@ export function DashboardShell({
   active: DashSection
   onNavigate: (s: DashSection) => void
   headerLeft?: ReactNode
+  /** tombol "Utama" di baris atas — kembali ke halaman utama */
+  onExit?: () => void
   children: ReactNode
 }) {
   // Dashboard TERTUTUP default di semua ukuran layar — dibuka lewat tombol menu.
@@ -161,21 +164,33 @@ export function DashboardShell({
       </aside>
 
       {/* Main column — drawer tertutup, jadi konten selalu rata tengah & proporsional
-          di portrait maupun landscape */}
+          di portrait maupun landscape. Baris atas HANYA: tombol Dashboard (menu),
+          Utama, dan jam — tanpa nama/judul agar tidak kepotong di HP. */}
       <div className="mx-auto min-w-0 max-w-3xl flex-1">
-        <div className="mb-4 flex items-center gap-3">
+        <div className="mb-4 flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => setOpen(true)}
-            aria-label="Buka menu"
+            aria-label="Buka dashboard"
             className="group inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--line)] bg-white/[0.05] px-3 text-sm font-semibold text-foreground transition hover:border-[var(--gold)]/50 hover:bg-white/10 active:scale-95"
           >
             <LayoutDashboard className="h-4.5 w-4.5 text-[var(--gold)] transition-transform duration-300 group-hover:-rotate-6" />
-            Menu
+            Dashboard
           </button>
-          <div className="min-w-0 flex-1">{headerLeft}</div>
-          <LiveClock className="hidden shrink-0 lg:inline-flex" />
-          <ThemeToggle className="lg:hidden" />
+          {onExit && (
+            <button
+              onClick={onExit}
+              title="Kembali ke halaman utama"
+              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--line)] bg-white/[0.05] px-3 text-sm font-semibold text-foreground transition hover:border-[var(--gold)]/50 hover:bg-white/10 active:scale-95"
+            >
+              <Home className="h-4.5 w-4.5 text-[var(--gold)]" /> Utama
+            </button>
+          )}
+          <LiveClock className="ml-auto hidden shrink-0 lg:inline-flex" />
+          <ThemeToggle className="lg:hidden ml-auto" />
         </div>
+        {headerLeft ? (
+          <div className="min-w-0 mb-4">{headerLeft}</div>
+        ) : null}
         {children}
       </div>
     </div>
