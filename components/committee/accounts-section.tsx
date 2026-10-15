@@ -11,15 +11,20 @@ import { PasswordResetButton } from "./password-reset-button"
 export function AccountsSection({
   accounts,
   onUjicoba,
+  pendingResetKeys,
 }: {
   accounts: AccountRow[]
   /** Opsional: buka mode Ujicoba akun ini (simulasi tampilan peserta) */
   onUjicoba?: (a: AccountRow) => void
+  /** Kunci "kelas::nomor" peserta yang sedang mengajukan reset — tombol reset
+   *  hanya muncul untuk mereka. */
+  pendingResetKeys?: string[]
 }) {
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [query, setQuery] = useState("")
   const [pending, startTransition] = useTransition()
   const router = useRouter()
+  const helpSet = new Set(pendingResetKeys ?? [])
 
   function remove(id: string) {
     startTransition(async () => {
@@ -122,7 +127,9 @@ export function AccountsSection({
                       <FlaskConical className="h-4 w-4" />
                     </button>
                   )}
-                  <PasswordResetButton account={a} />
+                  {helpSet.has(`${a.kelas}::${a.nomorPresensi}`) && (
+                    <PasswordResetButton account={a} />
+                  )}
 
                   {confirmId === a.id ? (
                     <span className="flex items-center gap-1.5">

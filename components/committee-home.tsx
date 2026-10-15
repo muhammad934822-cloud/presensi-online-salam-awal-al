@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, useMemo, Suspense } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { GraduationCap, Moon, UtensilsCrossed, ChevronRight, ShieldCheck, ScanLine, Users, Activity, Home , Lightbulb, History, BellRing, FlaskConical, QrCode } from "lucide-react"
@@ -67,6 +67,13 @@ export function CommitteeHome({
       /* diam — jangan jatuhkan dashboard karena gagal ambil tinjauan */
     }
   }
+
+  /** Kunci peserta yang sedang mengajukan reset — tombol reset di Daftar
+   *  Peserta hanya muncul untuk mereka (fitur hidden by default). */
+  const pendingResetKeys = useMemo(
+    () => helpRequests.map((h) => `${h.kelas}::${h.nomor}`),
+    [helpRequests],
+  )
   useEffect(() => {
     void refreshHelp()
     helpTimer.current = setInterval(() => { if (!document.hidden) void refreshHelp() }, 3_000)
@@ -396,7 +403,7 @@ export function CommitteeHome({
   /* ---------- Daftar peserta ---------- */
   const peserta = (
     <div className="w-full">
-      <AccountsSection accounts={accounts} />
+      <AccountsSection accounts={accounts} pendingResetKeys={pendingResetKeys} />
     </div>
   )
 

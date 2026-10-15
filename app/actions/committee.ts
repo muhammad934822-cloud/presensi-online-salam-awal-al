@@ -161,6 +161,13 @@ export type HelpRequest = {
   createdAt: Date
 }
 
+/** Kunci (kelas::nomor) dari permintaan yang masih pending — dipakai untuk
+ *  menampilkan tombol reset di Daftar Peserta HANYA saat ada ajuan. */
+export async function getPendingResetKeys(): Promise<string[]> {
+  const list = await getPendingResetHelp()
+  return list.map((h) => `${h.kelas}::${h.nomor}`)
+}
+
 /** Ambil SEMUA permintaan yang masih menunggu (pending) — untuk beranda panitia. */
 export async function getPendingResetHelp(): Promise<HelpRequest[]> {
   if (!(await isCommittee())) return []
