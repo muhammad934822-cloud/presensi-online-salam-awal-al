@@ -527,3 +527,50 @@ main {
     animation: none !important;
   }
 }
+
+/* ===== Halaman maintenance lock (SAA 1448 H) ===== */
+@keyframes ml-marquee {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+.ml-marquee-col {
+  animation: ml-marquee 70s linear infinite;
+}
+.ml-marquee-col:nth-child(2) {
+  animation-duration: 90s;
+  animation-delay: -30s;
+}
+@keyframes ml-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.ml-float { animation: ml-float 6s ease-in-out infinite; }
+@keyframes ml-float-rev {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+}
+.ml-float-rev { animation: ml-float-rev 7s ease-in-out infinite; }
+@keyframes ml-breathe {
+  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+}
+.ml-breathe { animation: ml-breathe 8s ease-in-out infinite; }
+@keyframes ml-shimmer {
+  from { background-position: 0% center; }
+  to { background-position: 200% center; }
+}
+.ml-shimmer { animation: ml-shimmer 6s linear infinite; }
+@keyframes ml-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.ml-rise { animation: ml-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes ml-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.ml-pulse { animation: ml-pulse 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .ml-marquee-col, .ml-float, .ml-float-rev, .ml-breathe,
+  .ml-shimmer, .ml-rise, .ml-pulse { animation: none; }
+}
