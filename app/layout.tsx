@@ -4,12 +4,15 @@ import { headers } from 'next/headers'
 import { Plus_Jakarta_Sans, Fraunces } from 'next/font/google'
 import { AppProviders } from '@/components/theme-provider'
 import MaintenanceLock from '@/components/maintenance-lock'
+import { getMaintenanceFeed } from '@/lib/queries'
 import './globals.css'
 
 // ===== MODE MAINTENANCE (server ditutup setelah hari-H) =====
 // Untuk membuka kembali: hapus/catat baris <MaintenanceLock /> di bawah,
 // atau set env VERCEL_BYPASS_SECRET lalu akses dengan header bypass Vercel.
 const MAINTENANCE = true
+
+export const revalidate = 300
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -54,6 +57,9 @@ export default async function RootLayout({
     }
   }
 
+  // Data presensi ASLI untuk latar halaman maintenance (read-only, ISR 5 menit).
+  const feed = MAINTENANCE && !bypass ? await getMaintenanceFeed() : null
+
   return (
     <html lang="id" className={`dark bg-background ${jakarta.variable} ${fraunces.variable}`}>
       <body className="font-sans antialiased">
@@ -64,7 +70,7 @@ export default async function RootLayout({
           }}
         />
         {MAINTENANCE && !bypass ? (
-          <MaintenanceLock />
+          <MaintenanceLock feed={feed} />
         ) : (
           <>
             <AppProviders>{children}</AppProviders>

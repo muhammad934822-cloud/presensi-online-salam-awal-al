@@ -130,6 +130,58 @@ export async function getAllParticipants(): Promise<AccountRow[]> {
   return rows.filter((r) => r.kelas !== "DEMO")
 }
 
+/** Cuplikan data presensi ASLI untuk latar halaman maintenance (read-only). */
+export type MaintenanceFeed = {
+  rows: { nama: string; kelas: string; nomorPresensi: number; status: string }[]
+  stats: { event: string; total: number; hadir: number }[]
+  log: { actor: string; action: string }[]
+}
+
+export async function getMaintenanceFeed(): Promise<MaintenanceFeed | null> {
+  try {
+    const [recap, stats, log] = await Promise.all([
+      db
+        .select({
+          nama: participants.nama,
+          kelas: participants.kelas,
+          nomorPresensi: participants.nomorPresensi,
+          verifiedAt: attendance.verifiedAt,
+        })
+        .from(attendance)
+        .innerJoin(participants, eq(attendance.participantId, participants.id))
+        .where(sql`${attendance.verifiedAt} is not null`)
+        .orderBy(desc(attendance.verifiedAt))
+        .limit(48),
+      getClassStats(),
+      getRecentActivity(12),
+    ])
+    if (recap.length === 0 && stats.length === 0 && log.length === 0) return null
+    const byEvent = new Map<string, { total: number; hadir: number }>()
+    for (const s of stats) {
+      const cur = byEvent.get(s.event) ?? { total: 0, hadir: 0 }
+      cur.total += s.total
+      cur.hadir += s.hadir
+      byEvent.set(s.event, cur)
+    }
+    return {
+      rows: recap.map((r) => ({
+        nama: r.nama,
+        kelas: r.kelas,
+        nomorPresensi: r.nomorPresensi,
+        status: "HADIR",
+      })),
+      stats: [...byEvent.entries()].map(([event, v]) => ({
+        event,
+        total: v.total,
+        hadir: v.hadir,
+      })),
+      log: log.map((l) => ({ actor: l.actor, action: l.action })),
+    }
+  } catch {
+    return null
+  }
+}
+
 export async function getMyCodes(participantId: string) {
   const rows = await db
     .select({

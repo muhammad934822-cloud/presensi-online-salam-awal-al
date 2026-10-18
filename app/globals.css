@@ -565,6 +565,11 @@ main {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .ml-rise { animation: ml-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes ml-rise-card {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.ml-rise-card { animation: ml-rise-card 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
 @keyframes ml-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
@@ -572,5 +577,5 @@ main {
 .ml-pulse { animation: ml-pulse 2.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .ml-marquee-col, .ml-float, .ml-float-rev, .ml-breathe,
-  .ml-shimmer, .ml-rise, .ml-pulse { animation: none; }
+  .ml-shimmer, .ml-rise, .ml-rise-card, .ml-pulse { animation: none; }
 }

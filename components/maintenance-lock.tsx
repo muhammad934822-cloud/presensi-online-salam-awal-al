@@ -1,60 +1,76 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { MaintenanceFeed } from "@/lib/queries";
 
-/** Cuplikan baris presensi palsu untuk latar "sistem presensi transparan". */
-const FAKE_ROWS: [string, string, string, string][] = [
-  ["AHMAD ZAKI", "XII IPA 1", "07", "HADIR"],
-  ["NUR FAUZIYAH", "XI IPS 2", "23", "HADIR"],
-  ["MUHAMMAD RIZKY", "XII IPA 3", "11", "VERIF..."],
-  ["SALSABILA N.", "XI IPA 4", "34", "HADIR"],
-  ["DIMAS PRATAMA", "XII IPS 1", "05", "TUNDA"],
-  ["AULIA RAHMAN", "X IPA 2", "19", "HADIR"],
-  ["FITRI HANDAYANI", "XII IPA 5", "28", "SCAN QR"],
-  ["RAFI AKRAM", "XI IPA 3", "02", "HADIR"],
-];
+const EVENT_LABEL: Record<string, string> = {
+  studium_generale: "Studium Generale",
+  mabit: "Mabit",
+  konsumsi: "Konsumsi",
+};
 
-const STATUS_CYCLE = ["HADIR", "SCAN QR", "VERIF...", "SESUAI"];
+/** Baris cadangan bila database tidak terjangkau (tetap terlihat seperti sistem). */
+const FALLBACK_ROWS: MaintenanceFeed["rows"] = [
+  ["AHMAD ZAKI", "XII IPA 1", 7, "HADIR"],
+  ["NUR FAUZIYAH", "XI IPS 2", 23, "HADIR"],
+  ["MUHAMMAD RIZKY", "XII IPA 3", 11, "HADIR"],
+  ["SALSABILA N.", "XI IPA 4", 34, "HADIR"],
+  ["DIMAS PRATAMA", "XII IPS 1", 5, "HADIR"],
+  ["AULIA RAHMAN", "X IPA 2", 19, "HADIR"],
+  ["FITRI HANDAYANI", "XII IPA 5", 28, "HADIR"],
+  ["RAFI AKRAM", "XI IPA 3", 2, "HADIR"],
+].map(([nama, kelas, nomorPresensi, status]) => ({ nama, kelas, nomorPresensi, status })) as MaintenanceFeed["rows"];
 
-export default function MaintenanceLock() {
+type Row = MaintenanceFeed["rows"][number];
+
+export default function MaintenanceLock({ feed }: { feed: MaintenanceFeed | null }) {
+  const rows: Row[] = feed && feed.rows.length > 0 ? feed.rows : FALLBACK_ROWS;
+  const stats = feed?.stats ?? [];
+  const log = feed?.log ?? [];
+
+  // "monitor" kecil berganti pelan — pakai data log aktivitas ASLI bila ada.
+  const cycleLen = Math.max(log.length, 1);
   const [tick, setTick] = useState(0);
-
-  // "monitor" kecil yang berganti pelan supaya halaman terasa hidup.
   useEffect(() => {
-    const id = setInterval(
-      () => setTick((t) => (t + 1) % FAKE_ROWS.length),
-      2600,
-    );
+    const id = setInterval(() => setTick((t) => (t + 1) % cycleLen), 2600);
     return () => clearInterval(id);
-  }, []);
+  }, [cycleLen]);
+
+  const monitorText =
+    log.length > 0
+      ? `${log[tick % log.length].actor} · ${log[tick % log.length].action}`
+      : `arsip terakhir: ${rows[tick % rows.length]?.nama ?? "-"} [HADIR]`;
+
+  // Pembagian kolom marquee agar dua kolom sama panjang & loop mulus.
+  const half = Math.ceil(rows.length / 2);
+  const colA = rows.slice(0, half);
+  const colB = rows.slice(half);
 
   return (
     <div className="fixed inset-0 z-[9999] overflow-hidden bg-gradient-to-br from-[#0b1020] via-[#141a33] to-[#0b1020] px-6 text-center">
-      {/* ===== Latar: sistem presensi transparan, dua kolom berjalan halus ===== */}
+      {/* ===== Latar: BERANDA SISTEM PRESENSI transparan, berjalan halus ===== */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 flex select-none gap-10 opacity-[0.07] md:gap-16"
       >
-        {[0, 1].map((col) => (
+        {[colA, colB].map((colRows, col) => (
           <div key={col} className="ml-marquee-col w-64 shrink-0 md:w-72">
-            {/* daftar digandakan 2x agar loop translateY(-50%) mulus tanpa putus */}
-            {[...FAKE_ROWS, ...FAKE_ROWS, ...FAKE_ROWS, ...FAKE_ROWS].map(
-              (r, i) => (
-                <div
-                  key={`${col}-${i}`}
-                  className="mb-3 rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-left font-mono text-xs text-slate-200"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">{r[0]}</span>
-                    <span className="text-emerald-300">{r[3]}</span>
-                  </div>
-                  <div className="mt-1 flex justify-between text-slate-400">
-                    <span>{r[1]}</span>
-                    <span>No. {r[2]}</span>
-                  </div>
+            {/* daftar digandakan agar loop translateY(-50%) mulus tanpa putus */}
+            {[...colRows, ...colRows, ...colRows, ...colRows].map((r, i) => (
+              <div
+                key={`${col}-${i}`}
+                className="mb-3 rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-left font-mono text-xs text-slate-200"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">{r.nama}</span>
+                  <span className="text-emerald-300">{r.status}</span>
                 </div>
-              ),
-            )}
+                <div className="mt-1 flex justify-between text-slate-400">
+                  <span>{r.kelas}</span>
+                  <span>No. {String(r.nomorPresensi).padStart(2, "0")}</span>
+                </div>
+              </div>
+            ))}
           </div>
         ))}
       </div>
@@ -97,15 +113,33 @@ export default function MaintenanceLock() {
             ditutup. Data kehadiran tersimpan aman.
           </p>
 
-          {/* Monitor kecil — hidup tapi tenang */}
-          <div className="mt-6 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 font-mono text-[11px] text-slate-400">
+          {/* Rekap akhir dari DATABASE ASLI — muncul bertahap */}
+          {stats.length > 0 && (
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              {stats.map((s, i) => (
+                <div
+                  key={s.event}
+                  className="ml-rise-card rounded-xl border border-white/10 bg-white/5 px-2 py-2.5"
+                  style={{ animationDelay: `${0.35 + i * 0.15}s` }}
+                >
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                    {EVENT_LABEL[s.event] ?? s.event}
+                  </p>
+                  <p className="mt-0.5 text-sm font-bold text-emerald-300">
+                    {s.hadir}/{s.total}
+                  </p>
+                  <p className="text-[9px] text-slate-500">hadir</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Monitor kecil — data log aktivitas ASLI */}
+          <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 font-mono text-[11px] text-slate-400">
             <span className="ml-pulse inline-block h-2 w-2 rounded-full bg-emerald-400" />
-            <span>
-              arsip terakhir:{" "}
-              <span className="text-slate-300">{FAKE_ROWS[tick][0]}</span>{" "}
-              <span className="text-emerald-300/80">
-                [{STATUS_CYCLE[tick % STATUS_CYCLE.length]}]
-              </span>
+            <span className="truncate">
+              {log.length > 0 ? "rekam jejak: " : "arsip terakhir: "}
+              <span className="text-slate-300">{monitorText}</span>
             </span>
           </div>
 
